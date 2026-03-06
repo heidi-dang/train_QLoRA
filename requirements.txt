@@ -1,0 +1,15 @@
+torch
+transformers
+peft
+trl
+accelerate
+bitsandbytes
+safetensors
+datasets
+fastapi
+uvicorn
+psutil
+mlflow
+requests
+openai
+wandb
