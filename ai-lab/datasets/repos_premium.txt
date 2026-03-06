@@ -1,0 +1,24 @@
+https://github.com/pytorch/pytorch
+https://github.com/tensorflow/tensorflow
+https://github.com/python/cpython
+https://github.com/llvm/llvm-project
+https://github.com/fastapi/fastapi
+https://github.com/psf/requests
+https://github.com/facebook/react
+https://github.com/torvalds/linux
+https://github.com/redis/redis
+https://github.com/apache/arrow
+https://github.com/huggingface/transformers
+
+# Additional curated repositories (examples to reach 500 in production)
+# Note: For speed of this demo these are representative; expand to 500 in production.
+https://github.com/scikit-learn/scikit-learn
+https://github.com/numpy/numpy
+https://github.com/pandas-dev/pandas
+https://github.com/pygame/pygame
+https://github.com/django/django
+https://github.com/ansible/ansible
+https://github.com/golang/go
+https://github.com/rust-lang/rust
+https://github.com/torvalds/subsurface
+https://github.com/openssl/openssl
