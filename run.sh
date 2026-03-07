@@ -13,14 +13,22 @@ mkdir -p "$STATE" "$LOGS" "$PIDS" "$DATA/datasets/clean" "$DATA/checkpoints" "$D
 VENV="$ROOT/venv"
 mkdir -p "$VENV"
 
+# Always ensure virtual environment is properly set up
+echo "🔧 Setting up Python environment..."
+
 # Create virtual environment if it doesn't exist
 if [ ! -d "$VENV" ]; then
   echo "Creating virtual environment..."
   python3 -m venv "$VENV"
-  source "$VENV/bin/activate"
-  pip install --upgrade pip
-  pip install -r requirements.txt
 fi
+
+# Always activate and install dependencies
+echo "Activating virtual environment and installing dependencies..."
+source "$VENV/bin/activate"
+pip install --upgrade pip
+pip install -r requirements.txt
+
+echo "✅ Environment setup complete!"
 
 # Load configuration if exists
 if [ -f "$CONFIG" ]; then
@@ -31,7 +39,7 @@ VENV_PYTHON="$VENV/bin/python"
 VENV_UVICORN="$VENV/bin/uvicorn"
 VENV_DASHBOARD="$VENV/bin/python"
 
-# Verify virtual environment exists
+# Verify virtual environment exists and dependencies are installed
 if [ ! -f "$VENV_PYTHON" ]; then
   echo "Virtual environment not found. Creating..."
   python3 -m venv "$VENV"
@@ -39,6 +47,10 @@ if [ ! -f "$VENV_PYTHON" ]; then
   pip install --upgrade pip
   pip install -r requirements.txt
 fi
+
+# Always activate environment for all commands
+echo "🚀 Activating Python virtual environment..."
+source "$VENV/bin/activate"
 
 CMD=${1:-help}
 
@@ -119,15 +131,17 @@ case $CMD in
     # Clear stale STOP
     rm -f "$STATE/STOP"
     
+    echo "🚀 Starting all services with proper environment..."
+    
     # Start Dashboard if enabled
     if [ "${ENABLE_DASHBOARD:-true}" = "true" ]; then
-      if ! pgrep -f "dashboard/app.py" > /dev/null; then
-        nohup $VENV_DASHBOARD -m dashboard.app >> "$LOGS/dashboard.log" 2>&1 &
+      if ! pgrep -f "dashboard.app" > /dev/null; then
+        nohup $VENV_DASHBOARD -c "from dashboard.app import main; main()" >> "$LOGS/dashboard.log" 2>&1 &
         echo $! > "$PIDS/dashboard.pid"
       fi
     fi
     
-    # Start MLflow if enabled
+    # MLflow
     if [ "${ENABLE_MLFLOW:-true}" = "true" ]; then
       if ! pgrep -f "mlflow server" > /dev/null; then
         nohup $VENV_PYTHON -m mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri "sqlite:///$STATE/mlflow.db" >> "$LOGS/mlflow.log" 2>&1 &
@@ -135,7 +149,7 @@ case $CMD in
       fi
     fi
     
-    # Start TensorBoard if enabled
+    # TensorBoard
     if [ "${ENABLE_TENSORBOARD:-true}" = "true" ]; then
       if ! pgrep -f "tensorboard" > /dev/null; then
         nohup $VENV_PYTHON -c "import sys; import importlib_metadata; sys.modules['pkg_resources'] = importlib_metadata; from tensorboard import main; main(['serve', '--logdir', '$ROOT/data/ai-lab/logs', '--host', '0.0.0.0', '--port', '6006'])" >> "$LOGS/tb.log" 2>&1 &
@@ -155,12 +169,12 @@ case $CMD in
       echo $! > "$PIDS/loop.pid"
     fi
     
-    echo "🚀 Services started:"
-    echo "  - API: http://localhost:8000/docs"
-    echo "  - MLflow: http://localhost:5000"
-    echo "  - TensorBoard: http://localhost:6006"
-    echo "  - Dashboard: http://localhost:8888 (terminal)"
-    echo "  - Logs: tail -f $LOGS/*"
+    echo "🎉 All services started successfully!"
+    echo "📊 Dashboard: http://localhost:8888 (terminal)"
+    echo "🔗 API: http://localhost:8000/docs"
+    echo "📈 MLflow: http://localhost:5000"
+    echo "📋 TensorBoard: http://localhost:6006"
+    echo "📝 Logs: tail -f $LOGS/*"
     ;;
   stop)
     touch "$STATE/STOP"
