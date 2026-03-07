@@ -219,8 +219,20 @@ case $CMD in
     fi
     $VENV_DASHBOARD -c "from dashboard.app import main; main()"
     ;;
+  logs)
+    # Start interactive log viewer
+    echo "Starting log viewer..."
+    if [ ! -f "$VENV_PYTHON" ]; then
+      echo "Virtual environment not found. Creating..."
+      python3 -m venv "$VENV"
+      source "$VENV/bin/activate"
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    fi
+    $VENV_DASHBOARD -c "from dashboard.log_viewer import main; main()"
+    ;;
   *)
-    echo "Usage: $0 {setup|search|up|stop|status|doctor|train-once|dashboard}"
+    echo "Usage: $0 {setup|search|up|stop|status|doctor|train-once|dashboard|logs}"
     echo ""
     echo "Commands:"
     echo "  setup     - Interactive configuration setup"
@@ -230,6 +242,7 @@ case $CMD in
     echo "  status    - Check service status"
     echo "  doctor    - Run health checks"
     echo "  train-once - Run one training round"
-    echo "  dashboard - Start monitoring dashboard"
+    echo "  dashboard - Start rich monitoring dashboard"
+    echo "  logs      - Start interactive log viewer"
     ;;
 esac
