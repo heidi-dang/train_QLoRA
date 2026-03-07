@@ -11,7 +11,11 @@ CONFIG="$ROOT/config.json"
 mkdir -p "$STATE" "$LOGS" "$PIDS" "$DATA/datasets/clean" "$DATA/checkpoints" "$DATA/evaluation"
 
 VENV="$ROOT/venv"
+mkdir -p "$VENV"
+
+# Create virtual environment if it doesn't exist
 if [ ! -d "$VENV" ]; then
+  echo "Creating virtual environment..."
   python3 -m venv "$VENV"
   source "$VENV/bin/activate"
   pip install --upgrade pip
@@ -26,6 +30,15 @@ fi
 VENV_PYTHON="$VENV/bin/python"
 VENV_UVICORN="$VENV/bin/uvicorn"
 VENV_DASHBOARD="$VENV/bin/python"
+
+# Verify virtual environment exists
+if [ ! -f "$VENV_PYTHON" ]; then
+  echo "Virtual environment not found. Creating..."
+  python3 -m venv "$VENV"
+  source "$VENV/bin/activate"
+  pip install --upgrade pip
+  pip install -r requirements.txt
+fi
 
 CMD=${1:-help}
 
@@ -129,7 +142,15 @@ case $CMD in
     ;;
   dashboard)
     # Start standalone dashboard
-    $VENV_DASHBOARD -m dashboard.app
+    echo "Starting dashboard..."
+    if [ ! -f "$VENV_PYTHON" ]; then
+      echo "Virtual environment not found. Creating..."
+      python3 -m venv "$VENV"
+      source "$VENV/bin/activate"
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    fi
+    $VENV_DASHBOARD -c "from dashboard.app import main; main()"
     ;;
   *)
     echo "Usage: $0 {setup|search|up|stop|status|doctor|train-once|dashboard}"
