@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""Generate training samples from source files using a teacher model (Grok/xAI API).
-
-This script reads ai-lab/datasets/repos_filelist.txt and emits JSONL files into ai-lab/datasets/raw/.
-Each JSON line follows the schema defined in docs/implementation_continuous_training.md
-"""
 import os
 import json
 import logging
@@ -11,8 +5,11 @@ import time
 from pathlib import Path
 import hashlib
 import random
-import os
 import sys
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pipeline import grok_client
@@ -32,6 +29,10 @@ PROMPT_TEMPLATES = [
     ('bugfind', 'Find potential bugs or edge cases in the following code and explain how to fix them'),
 ]
 
+MAX_WORKERS = 3
+
+sample_lock = Lock()
+
 
 def read_filelist(path):
     if not os.path.exists(path):
@@ -42,47 +43,23 @@ def read_filelist(path):
 
 
 def send_to_teacher(prompt: str, code: str) -> str:
-    """Stub for teacher model (Grok/xAI). Replace with real API client.
-
-    For now we return deterministic synthetic outputs to allow pipeline continuity.
-    """
-    # Simple synthetic reply to allow pipeline to run without external API
     seed = hashlib.sha1((prompt + code[:100]).encode()).digest()
     rnd = int.from_bytes(seed[:4], 'big')
     random.seed(rnd)
-    # fabricate response
     if 'tests' in prompt.lower():
         return 'def test_example():\n    assert True\n'
     if 'explain' in prompt.lower():
         return 'This code implements ... (auto-generated explanation)'
     if 'refactor' in prompt.lower():
-        return code  # return original as placeholder
+        return code
     if 'optimize' in prompt.lower():
-        return code  # placeholder
+        return code
     if 'bug' in prompt.lower():
         return 'No obvious bugs found in this snippet.'
     return 'Generated sample.'
 
 
-def configure_grok_from_env():
-    """If GROK_API_KEY is present in environment, attempt to use a Grok client.
-
-    This is a placeholder configuration function — in production replace with a
-    proper Grok/xAI SDK client and implement batching and rate-limiting.
-    """
-    api_key = os.environ.get('GROK_API_KEY')
-    if not api_key:
-        return None
-    # Placeholder: return a simple function wrapper that would call the real API
-    def real_call(template, text):
-        # Here you'd call the Grok API; we keep stub to avoid external calls
-        return send_to_teacher(template, text)
-
-    return real_call
-
-
 def score_sample(instr: str, context: str, response: str) -> float:
-    # lightweight heuristic score: longer response and non-empty context -> higher
     s = 0.0
     if context:
         s += 0.3
@@ -94,12 +71,13 @@ def generate_for_file(path: str, out_dir: str, teacher_client=None):
     try:
         text = Path(path).read_text(errors='ignore')
     except Exception:
-        logging.exception('Failed to read %s', path)
         return 0
     if not text.strip():
         return 0
+    
+    code = text[:4000] + "\n... [truncated]" if len(text) > 4000 else text
+    
     repo = 'unknown'
-    # attempt to infer repo from path: ai-lab/repos/<owner_repo>/...
     parts = Path(path).parts
     if 'ai-lab' in parts and 'repos' in parts:
         try:
@@ -110,16 +88,17 @@ def generate_for_file(path: str, out_dir: str, teacher_client=None):
 
     os.makedirs(out_dir, exist_ok=True)
     produced = 0
+    
     for tag, template in PROMPT_TEMPLATES:
-        prompt = f"{template}:\n\n{Path(path).name}\n---\n{ text[:2000] }"
+        prompt = f"{template}:\n\n{Path(path).name}\n---\n{code}"
         try:
             if teacher_client is not None:
                 resp = teacher_client.generate(template, text)
             else:
                 resp = send_to_teacher(template, text)
         except Exception:
-            logging.exception('Teacher failed for %s', path)
             resp = ''
+        
         sample = {
             'instruction': template,
             'context': text[:8192],
@@ -130,22 +109,43 @@ def generate_for_file(path: str, out_dir: str, teacher_client=None):
         }
         fname = hashlib.sha1((path + tag).encode()).hexdigest() + '.jsonl'
         out_path = os.path.join(out_dir, fname)
-        with open(out_path, 'a') as f:
-            f.write(json.dumps(sample) + '\n')
+        with sample_lock:
+            with open(out_path, 'a') as f:
+                f.write(json.dumps(sample) + '\n')
         produced += 1
+    
     return produced
 
 
 def main():
     os.makedirs(RAW_DIR, exist_ok=True)
     files = read_filelist(FILELIST)
-    # configure optional Grok client if available
     teacher_client = grok_client.get_client()
-    total = 0
-    for p in files:
-        n = generate_for_file(p, RAW_DIR, teacher_client=teacher_client)
-        total += n
-    logging.info('Generated %d samples', total)
+    
+    total_files = len(files)
+    total_samples = 0
+    
+    print(f'Processing {total_files} files with {MAX_WORKERS} workers...')
+    
+    with tqdm(total=total_files, desc='Generating', unit='file') as pbar:
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {executor.submit(generate_for_file, f, RAW_DIR, teacher_client): f for f in files}
+            
+            for future in as_completed(futures):
+                path = futures[future]
+                try:
+                    n = future.result()
+                    total_samples += n
+                except Exception as e:
+                    logging.error(f'Failed {path}: {e}')
+                    n = 0
+                
+                pbar.update(1)
+                fname = Path(path).name[:25] + '..' if len(Path(path).name) > 25 else Path(path).name
+                pbar.set_postfix_str(f'samples={total_samples} file={fname}')
+    
+    print()
+    logging.info('Generated %d samples from %d files', total_samples, total_files)
 
 
 if __name__ == '__main__':

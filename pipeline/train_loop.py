@@ -67,16 +67,26 @@ def main_loop():
     round_n = 0
     Path(CHECKPOINTS).mkdir(parents=True, exist_ok=True)
     while True:
-        if os.path.exists(STOP_FILE):
-            logging.info('STOP file exists - exiting loop')
-            break
-        round_n += 1
         try:
-            stage_scrape()
-            stage_generate()
-            stage_clean()
-            stage_train(round_n)
-            stage_evaluate(round_n)
+            if os.path.exists(STOP_FILE):
+                logging.info('STOP file exists - exiting loop')
+                break
+            round_n += 1
+            stages = [
+                ("scrape", stage_scrape),
+                ("generate", stage_generate),
+                ("clean", stage_clean),
+                ("train", lambda: stage_train(round_n)),
+                ("evaluate", lambda: stage_evaluate(round_n))
+            ]
+            for i, (name, func) in enumerate(stages, 1):
+                pct = (i / len(stages)) * 100
+                bar_len = 20
+                filled = int(bar_len * i // len(stages))
+                bar = '█' * filled + '░' * (bar_len - filled)
+                print(f'\rRound {round_n} [{i}/5] |{bar}| {pct:.0f}% | {name}', end='', flush=True)
+                func()
+            print(f'\nRound {round_n} complete')
             # MLflow logging: read evaluation results and log metrics
             eval_file = os.path.join(AI_LAB, 'evaluation', f'results_round_{round_n}.json')
             metrics = {}

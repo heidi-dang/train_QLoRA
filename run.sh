@@ -92,8 +92,8 @@ case $CMD in
     ;;
   up)
     # Always run setup to ensure proper configuration
-    echo "🔧 Running configuration setup..."
-    $VENV_PYTHON setup_config.py
+#     echo "🔧 Running configuration setup..."
+#     $VENV_PYTHON setup_config.py
     
     # Stop any existing services first
     echo "🛑 Stopping any existing services..."

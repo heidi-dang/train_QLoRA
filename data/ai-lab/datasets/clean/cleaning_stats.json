@@ -1,13 +1,15 @@
 {
-  "total_samples": 1178,
-  "avg_quality_score": 0.8961422042561891,
+  "total_samples": 5913,
+  "avg_quality_score": 0.8459238888568213,
   "language_distribution": {
+    "rust": 1000,
     "python": 1000,
-    "typescript": 105,
-    "javascript": 42,
-    "cpp": 8,
-    "rust": 11,
-    "unknown": 12
+    "typescript": 1000,
+    "javascript": 1000,
+    "cpp": 1000,
+    "java": 41,
+    "go": 10,
+    "unknown": 862
   },
-  "avg_response_length": 2178.4015280135823
+  "avg_response_length": 2001.281921190597
 }
