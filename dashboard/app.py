@@ -2,20 +2,14 @@
 import os
 import json
 import time
-import threading
 import psutil
 import subprocess
 from pathlib import Path
 from datetime import datetime, timedelta
+from collections import deque
 
 try:
     from rich.console import Console
-    from rich.layout import Layout
-    from rich.panel import Panel
-    from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
-    from rich.table import Table
-    from rich.live import Live
-    from rich.text import Text
 except ImportError:
     print("Rich not available")
     exit(1)
@@ -23,6 +17,7 @@ except ImportError:
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 TELEMETRY_FILE = os.path.join(ROOT, 'state', 'telemetry.json')
 LOGS_DIR = os.path.join(ROOT, 'logs')
+MAX_LOG_LINES = 50
 
 console = Console()
 
@@ -33,70 +28,73 @@ PRICING = {
 }
 
 
-def load_telemetry():
-    if os.path.exists(TELEMETRY_FILE):
+class DashboardState:
+    def __init__(self):
+        self.telemetry = self._default_telemetry()
+        self.log_lines = deque(maxlen=MAX_LOG_LINES)
+        self.last_log_size = 0
+    
+    def _default_telemetry(self):
+        return {
+            "status": "idle",
+            "current_stage": "",
+            "stage_index": 0,
+            "total_stages": 4,
+            "stage_percent": 0.0,
+            "overall_percent": 0.0,
+            "completed_units": 0,
+            "total_units": 0,
+            "eta_seconds": 0,
+            "usage": {
+                "provider": "",
+                "model": "",
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "request_count": 0,
+                "successful_requests": 0,
+                "failed_requests": 0,
+                "spend_usd": 0.0
+            }
+        }
+    
+    def load_telemetry(self):
+        if os.path.exists(TELEMETRY_FILE):
+            try:
+                with open(TELEMETRY_FILE, 'r') as f:
+                    self.telemetry = json.load(f)
+            except:
+                pass
+    
+    def append_logs(self, new_lines):
+        for line in new_lines:
+            if line.strip():
+                self.log_lines.append(line.strip())
+
+
+def get_new_log_lines():
+    log_file = os.path.join(LOGS_DIR, 'loop.log')
+    new_lines = []
+    if os.path.exists(log_file):
         try:
-            with open(TELEMETRY_FILE, 'r') as f:
-                return json.load(f)
+            with open(log_file, 'r') as f:
+                f.seek(0, 2)
+                file_size = f.tell()
+                if file_size > 500000:
+                    f.seek(file_size - 500000)
+                else:
+                    f.seek(0)
+                lines = f.readlines()
+                new_lines = [l.strip() for l in lines[-50:] if l.strip()]
         except:
             pass
-    return {
-        "status": "idle",
-        "current_stage": "",
-        "stage_index": 0,
-        "total_stages": 4,
-        "stage_percent": 0.0,
-        "overall_percent": 0.0,
-        "completed_units": 0,
-        "total_units": 0,
-        "eta_seconds": 0,
-        "usage": {
-            "provider": "",
-            "model": "",
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0,
-            "request_count": 0,
-            "successful_requests": 0,
-            "failed_requests": 0,
-            "spend_usd": 0.0
-        }
-    }
+    return new_lines
 
 
-def get_gpu_stats():
-    try:
-        result = subprocess.run(
-            ['nvidia-smi', '--query-gpu=utilization.gpu,memory.used,memory.total', 
-             '--format=csv,noheader,nounits'],
-            capture_output=True, text=True, timeout=5
-        )
-        if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
-            if lines and lines[0].strip():
-                gpu_util, mem_used, mem_total = lines[0].split(', ')
-                return {
-                    'gpu_util': int(gpu_util),
-                    'gpu_mem_used': int(mem_used) / 1024,
-                    'gpu_mem_total': int(mem_total) / 1024,
-                    'gpu_mem_percent': (int(mem_used) / int(mem_total) * 100) if int(mem_total) > 0 else 0
-                }
-    except:
-        pass
-    return {'gpu_util': 0, 'gpu_mem_used': 0, 'gpu_mem_total': 0, 'gpu_mem_percent': 0}
-
-
-def create_header(telem):
-    status = telem.get("status", "idle")
-    status_color = {"running": "green", "stopped": "yellow", "completed": "blue", "failed": "red", "idle": "dim"}
-    status_text = f"[{status_color.get(status, 'white')}]{status.upper()}[/{status_color.get(status, 'white')}]"
-    return Panel(
-        f"[bold cyan]QLoRA Training[/bold cyan] | Status: {status_text} | {datetime.now().strftime('%H:%M:%S')}",
-        style="blue"
-    )
-
-
-def create_usage_panel(telem):
+def render_dashboard(state):
+    telem = state.telemetry
+    lines = list(state.log_lines)
+    
     usage = telem.get("usage", {})
     model = usage.get("model", "N/A") or "N/A"
     provider = usage.get("provider", "N/A") or "N/A"
@@ -107,25 +105,7 @@ def create_usage_panel(telem):
     success = usage.get("successful_requests", 0)
     failed = usage.get("failed_requests", 0)
     spend = usage.get("spend_usd", 0.0)
-
-    table = Table(show_header=False, box=None)
-    table.add_column("Metric", style="cyan", width=20)
-    table.add_column("Value", style="green")
-
-    table.add_row("Provider", provider)
-    table.add_row("Model", model)
-    table.add_row("Prompt Tokens", f"{prompt_tokens:,}")
-    table.add_row("Completion Tokens", f"{completion_tokens:,}")
-    table.add_row("Total Tokens", f"{total_tokens:,}")
-    table.add_row("API Requests", f"{requests:,}")
-    table.add_row("Success", f"{success:,}")
-    table.add_row("Failed", f"{failed:,}")
-    table.add_row("[bold]Spend USD[/bold]", f"[bold green]${spend:.4f}[/bold green]")
-
-    return Panel(table, title="💰 Teacher Usage & Cost", border_style="green")
-
-
-def create_progress_panel(telem):
+    
     stage = telem.get("current_stage", "N/A")
     idx = telem.get("stage_index", 0)
     total = telem.get("total_stages", 4)
@@ -134,119 +114,135 @@ def create_progress_panel(telem):
     completed = telem.get("completed_units", 0)
     total_units = telem.get("total_units", 0)
     eta = telem.get("eta_seconds", 0)
-
-    table = Table(show_header=False, box=None)
-    table.add_column("Metric", style="cyan", width=20)
-    table.add_column("Value", style="green")
-
-    table.add_row("Stage", f"{stage} ({idx+1}/{total})")
-    table.add_row("Stage Progress", f"{stage_pct:.1f}%")
-    table.add_row("Overall Progress", f"{overall_pct:.1f}%")
-    table.add_row("Units", f"{completed:,}/{total_units:,}")
-    if eta > 0:
-        table.add_row("ETA", str(timedelta(seconds=eta)))
-
-    bar_len = 30
-    filled = int(bar_len * stage_pct // 100)
-    bar = '█' * filled + '░' * (bar_len - filled)
-    table.add_row("Progress", f"[green]{bar}[/green] {stage_pct:.1f}%")
-
-    return Panel(table, title="📊 Progress", border_style="cyan")
-
-
-def create_resources_panel():
-    cpu = psutil.cpu_percent(interval=0.1)
-    mem = psutil.virtual_memory()
-    gpu = get_gpu_stats()
-
-    table = Table(show_header=False, box=None)
-    table.add_column("Metric", style="cyan", width=20)
-    table.add_column("Value", style="green")
-
-    table.add_row("CPU", f"{cpu:.1f}%")
-    table.add_row("Memory", f"{mem.percent:.1f}% ({mem.used/1024**3:.1f}/{mem.total/1024**3:.1f}GB)")
-    if gpu['gpu_util'] > 0:
-        table.add_row("GPU", f"{gpu['gpu_util']}%")
-        table.add_row("GPU Memory", f"{gpu['gpu_mem_percent']:.1f}% ({gpu['gpu_mem_used']:.1f}/{gpu['gpu_mem_total']:.1f}GB)")
-
-    return Panel(table, title="🖥️ Resources", border_style="blue")
-
-
-def create_status_panel(telem):
+    
     status = telem.get("status", "idle")
-    stage = telem.get("current_stage", "")
-
+    
+    cpu = psutil.cpu_percent(interval=0)
+    mem = psutil.virtual_memory()
+    
+    gpu = {'gpu_util': 0, 'gpu_mem_used': 0, 'gpu_mem_total': 0, 'gpu_mem_percent': 0}
+    try:
+        result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu,memory.used,memory.total', 
+             '--format=csv,noheader,nounits'],
+            capture_output=True, text=True, timeout=2
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts = result.stdout.strip().split(', ')
+            if len(parts) == 3:
+                gpu['gpu_util'] = int(parts[0])
+                gpu['gpu_mem_used'] = float(parts[1]) / 1024
+                gpu['gpu_mem_total'] = float(parts[2]) / 1024
+                gpu['gpu_mem_percent'] = (float(parts[1]) / float(parts[2]) * 100) if float(parts[2]) > 0 else 0
+    except:
+        pass
+    
     status_map = {
-        "running": "🟢 Running",
-        "stopped": "🟡 Stopped",
-        "completed": "🔵 Completed", 
-        "failed": "🔴 Failed",
-        "idle": "⚪ Idle"
+        "running": "RUNNING",
+        "stopped": "STOPPED",
+        "completed": "COMPLETED", 
+        "failed": "FAILED",
+        "idle": "IDLE"
     }
-
-    services = []
-    for name, pidfile in [("API", "api.pid"), ("Dashboard", "dashboard.pid"), ("Loop", "loop.pid"), ("MLflow", "mlflow.pid"), ("TB", "tb.pid")]:
-        pid_path = os.path.join(ROOT, "state", "pids", pidfile)
-        if os.path.exists(pid_path):
-            try:
-                with open(pid_path) as f:
-                    pid = int(f.read().strip())
-                    if psutil.pid_exists(pid):
-                        services.append(f"{name}: ✓")
-                    else:
-                        services.append(f"{name}: ✗")
-            except:
-                services.append(f"{name}: ✗")
-        else:
-            services.append(f"{name}: -")
-
-    table = Table(show_header=False, box=None)
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", style="green")
-    table.add_row("Status", status_map.get(status, status))
-    table.add_row("Stage", stage)
-    table.add_row("Services", ", ".join(services))
-
-    return Panel(table, title="📋 Run Status", border_style="yellow")
+    
+    status_color = {
+        "running": "green",
+        "stopped": "yellow",
+        "completed": "blue", 
+        "failed": "red",
+        "idle": "white"
+    }
+    
+    output = []
+    output.append("")
+    output.append("=" * 80)
+    output.append(f"QLoRA Training Dashboard | [{status_color.get(status, 'white')}]{status_map.get(status, 'IDLE')}[/{status_color.get(status, 'white')}] | {datetime.now().strftime('%H:%M:%S')}")
+    output.append("=" * 80)
+    output.append("")
+    
+    output.append("┌─────────────────────────────────────────────────────────────────────────────┐")
+    output.append("│ 💰 TEACHER USAGE & COST                                                 │")
+    output.append("├─────────────────────────────────────────────────────────────────────────────┤")
+    output.append(f"│ Provider:       {provider:<20} Model: {model:<30}│")
+    output.append(f"│ Prompt Tokens:  {prompt_tokens:>15,}   Completion Tokens: {completion_tokens:>15,}│")
+    output.append(f"│ Total Tokens:   {total_tokens:>15,}   API Requests:    {requests:>15,}│")
+    output.append(f"│ Success:       {success:>15,}   Failed:          {failed:>15,}│")
+    output.append(f"│                                                                            │")
+    output.append(f"│ 💵 SPEND: $[green]{spend:>10.4f}[/green] USD                                             │")
+    output.append("└─────────────────────────────────────────────────────────────────────────────┘")
+    output.append("")
+    
+    output.append("┌─────────────────────────────────────────────────────────────────────────────┐")
+    output.append("│ 📊 PROGRESS                                                            │")
+    output.append("├─────────────────────────────────────────────────────────────────────────────┤")
+    output.append(f"│ Stage: {stage} ({idx+1}/{total})                                              │")
+    output.append(f"│ Stage Progress: {stage_pct:>6.1f}%                                                     │")
+    output.append(f"│ Overall Progress: {overall_pct:>6.1f}%                                                 │")
+    bar_len = 40
+    filled = int(bar_len * stage_pct / 100)
+    bar = '█' * filled + '░' * (bar_len - filled)
+    output.append(f"│ [{bar}] {stage_pct:>5.1f}%                                           │")
+    output.append(f"│ Units: {completed:,}/{total_units:,}                                                      │")
+    if eta > 0:
+        output.append(f"│ ETA: {str(timedelta(seconds=eta)):<45}│")
+    output.append("└─────────────────────────────────────────────────────────────────────────────┘")
+    output.append("")
+    
+    output.append("┌─────────────────────────────────────────────────────────────────────────────┐")
+    output.append("│ 🖥️ RESOURCES                                                            │")
+    output.append("├─────────────────────────────────────────────────────────────────────────────┤")
+    output.append(f"│ CPU: {cpu:>6.1f}%                                                           │")
+    output.append(f"│ Memory: {mem.percent:>5.1f}% ({mem.used/1024**3:.1f}/{mem.total/1024**3:.1f} GB)                             │")
+    if gpu['gpu_util'] > 0:
+        output.append(f"│ GPU: {gpu['gpu_util']:>5}%                                                            │")
+        output.append(f"│ GPU Mem: {gpu['gpu_mem_percent']:>5.1f}% ({gpu['gpu_mem_used']:.1f}/{gpu['gpu_mem_total']:.1f} GB)                         │")
+    output.append("└─────────────────────────────────────────────────────────────────────────────┘")
+    output.append("")
+    
+    output.append("┌─────────────────────────────────────────────────────────────────────────────┐")
+    output.append("│ 📋 RECENT LOGS (preserved, no flash)                                   │")
+    output.append("├─────────────────────────────────────────────────────────────────────────────┤")
+    for line in lines[-15:]:
+        if len(line) > 70:
+            line = line[:67] + "..."
+        output.append(f"│ {line:<77}│")
+    output.append("└─────────────────────────────────────────────────────────────────────────────┘")
+    output.append("")
+    
+    return "\n".join(output)
 
 
 def main():
-    console.clear()
-    print("Starting Dashboard... Press Ctrl+C to exit")
-
-    with Live(refresh_per_second=1) as live:
+    state = DashboardState()
+    last_telem_hash = ""
+    last_log_count = 0
+    
+    console.line()
+    console.print("[bold green]Starting Dashboard...[/bold green] Logs and progress preserved - no flash")
+    console.line()
+    
+    while True:
         try:
-            while True:
-                telem = load_telemetry()
-
-                layout = Layout()
-                layout.split_column(
-                    Layout(name="header", size=3),
-                    Layout(name="main"),
-                )
-                layout["main"].split_row(
-                    Layout(name="left"),
-                    Layout(name="right"),
-                )
-                layout["left"].split_column(
-                    Layout(name="status"),
-                    Layout(name="resources"),
-                )
-                layout["right"].split_column(
-                    Layout(name="usage"),
-                    Layout(name="progress"),
-                )
-
-                layout["header"].update(create_header(telem))
-                layout["left"]["status"].update(create_status_panel(telem))
-                layout["left"]["resources"].update(create_resources_panel())
-                layout["right"]["usage"].update(create_usage_panel(telem))
-                layout["right"]["progress"].update(create_progress_panel(telem))
-
-                live.update(layout)
-                time.sleep(1)
+            state.load_telemetry()
+            telem_str = json.dumps(state.telemetry, sort_keys=True)
+            
+            new_logs = get_new_log_lines()
+            if len(new_logs) > last_log_count:
+                state.append_logs(new_logs)
+                last_log_count = len(new_logs)
+            
+            if telem_str != last_telem_hash:
+                render = render_dashboard(state)
+                console.print(render)
+                last_telem_hash = telem_str
+            
+            time.sleep(1)
+            
         except KeyboardInterrupt:
             console.print("\n[yellow]Dashboard stopped[/yellow]")
+            break
+        except Exception as e:
+            time.sleep(1)
 
 
 if __name__ == '__main__':
