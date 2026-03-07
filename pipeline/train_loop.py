@@ -7,6 +7,7 @@ import os
 import time
 import logging
 import subprocess
+import sys
 import json
 from pathlib import Path
 try:
@@ -27,17 +28,17 @@ logging.basicConfig(level=logging.INFO)
 
 def stage_scrape():
     logging.info('Stage: scrape')
-    subprocess.call(['python3', os.path.join(ROOT, 'pipeline', 'scrape_repos.py')])
+    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'scrape_repos.py')])
 
 
 def stage_generate():
     logging.info('Stage: generate samples')
-    subprocess.call(['python3', os.path.join(ROOT, 'pipeline', 'generate_samples.py')])
+    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'generate_samples.py')])
 
 
 def stage_clean():
     logging.info('Stage: clean dataset')
-    subprocess.call(['python3', os.path.join(ROOT, 'pipeline', 'clean_dataset.py')])
+    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'clean_dataset.py')])
 
 
 def stage_train(round_n: int):
@@ -48,7 +49,7 @@ def stage_train(round_n: int):
     # call training scaffold (train_q_lora) which will use real training if deps present
     train_script = os.path.join(ROOT, 'pipeline', 'train_q_lora.py')
     try:
-        subprocess.check_call(['python3', train_script, os.path.join(AI_LAB, 'datasets', 'clean', 'train.json'), ckpt_dir])
+        subprocess.check_call([sys.executable, train_script, os.path.join(AI_LAB, 'datasets', 'clean', 'train.json'), ckpt_dir])
     except subprocess.CalledProcessError:
         logging.exception('Training script failed; creating metadata only')
     meta = {'round': round_n, 'base_model': 'mistralai/Mistral-7B-Instruct-v0.2'}
@@ -59,7 +60,7 @@ def stage_train(round_n: int):
 
 def stage_evaluate(round_n: int):
     logging.info('Stage: evaluate')
-    subprocess.call(['python3', os.path.join(ROOT, 'pipeline', 'evaluate_model.py'), str(round_n)])
+    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'evaluate_model.py'), str(round_n)])
 
 
 def main_loop():

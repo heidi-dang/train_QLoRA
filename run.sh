@@ -144,7 +144,7 @@ case $CMD in
     # MLflow
     if [ "${ENABLE_MLFLOW:-true}" = "true" ]; then
       if ! pgrep -f "mlflow server" > /dev/null; then
-        nohup $VENV_PYTHON -m mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri "sqlite:///$STATE/mlflow.db" >> "$LOGS/mlflow.log" 2>&1 &
+        nohup $VENV_PYTHON -m mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri \"sqlite:///$STATE/mlflow.db\" --default-artifact-root file://$ROOT/mlartifacts --serve-artifacts >> "$LOGS/mlflow.log" 2>&1 &
         echo $! > "$PIDS/mlflow.pid"
       fi
     fi
@@ -152,7 +152,7 @@ case $CMD in
     # TensorBoard
     if [ "${ENABLE_TENSORBOARD:-true}" = "true" ]; then
       if ! pgrep -f "tensorboard" > /dev/null; then
-        nohup $VENV_PYTHON -c "import sys; import importlib_metadata; sys.modules['pkg_resources'] = importlib_metadata; from tensorboard import main; main(['serve', '--logdir', '$ROOT/data/ai-lab/logs', '--host', '0.0.0.0', '--port', '6006'])" >> "$LOGS/tb.log" 2>&1 &
+        nohup "$VENV/bin/tensorboard" --logdir "$ROOT/data/ai-lab/logs" --host 0.0.0.0 --port 6006 >> "$LOGS/tb.log" 2>&1 &
         echo $! > "$PIDS/tb.pid"
       fi
     fi
@@ -202,7 +202,7 @@ case $CMD in
     cat "$LOGS"/*.log | tail -5 || true
     ;;
   doctor)
-    $VENV_PYTHON -m tools.doctor one-click-runner
+    $VENV_PYTHON -m tools.doctor
     ;;
   train-once)
     $VENV_PYTHON -m pipeline.train_loop --once

@@ -1,6 +1,13 @@
 {
-  "total_samples": 0,
-  "avg_quality_score": 0,
-  "language_distribution": {},
-  "avg_response_length": 0
+  "total_samples": 1178,
+  "avg_quality_score": 0.8961422042561891,
+  "language_distribution": {
+    "python": 1000,
+    "typescript": 105,
+    "javascript": 42,
+    "cpp": 8,
+    "rust": 11,
+    "unknown": 12
+  },
+  "avg_response_length": 2178.4015280135823
 }
