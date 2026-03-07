@@ -45,6 +45,33 @@ CMD=${1:-help}
 case $CMD in
   setup)
     # Interactive setup
+    echo "🛑 Stopping all running services before setup..."
+    # Stop all running services first
+    touch "$STATE/STOP" 2>/dev/null || true
+    for pidfile in "$PIDS"/*.pid; do
+      if [ -f "$pidfile" ]; then
+        pid=$(cat "$pidfile")
+        if kill -0 "$pid" 2>/dev/null; then
+          echo "Stopping process $pid ($(basename $pidfile .pid))"
+          kill "$pid" 2>/dev/null || true
+          sleep 1
+          kill -9 "$pid" 2>/dev/null || true
+        fi
+        rm -f "$pidfile"
+      fi
+    done
+    
+    # Kill any remaining processes
+    pkill -f "train_api:app" 2>/dev/null || true
+    pkill -f "train_loop.py" 2>/dev/null || true
+    pkill -f "mlflow server" 2>/dev/null || true
+    pkill -f "tensorboard" 2>/dev/null || true
+    pkill -f "dashboard.app" 2>/dev/null || true
+    
+    # Remove STOP file after cleanup
+    rm -f "$STATE/STOP" 2>/dev/null || true
+    
+    echo "✅ All services stopped. Starting setup..."
     $VENV_PYTHON setup_config.py
     ;;
   search)
@@ -57,6 +84,34 @@ case $CMD in
       echo "No configuration found. Running setup first..."
       $VENV_PYTHON setup_config.py
     fi
+    
+    # Stop any existing services first
+    echo "🛑 Stopping any existing services..."
+    touch "$STATE/STOP" 2>/dev/null || true
+    for pidfile in "$PIDS"/*.pid; do
+      if [ -f "$pidfile" ]; then
+        pid=$(cat "$pidfile")
+        if kill -0 "$pid" 2>/dev/null; then
+          echo "Stopping process $pid ($(basename $pidfile .pid))"
+          kill "$pid" 2>/dev/null || true
+          sleep 1
+          kill -9 "$pid" 2>/dev/null || true
+        fi
+        rm -f "$pidfile"
+      fi
+    done
+    
+    # Kill any remaining processes
+    pkill -f "train_api:app" 2>/dev/null || true
+    pkill -f "train_loop.py" 2>/dev/null || true
+    pkill -f "mlflow server" 2>/dev/null || true
+    pkill -f "tensorboard" 2>/dev/null || true
+    pkill -f "dashboard.app" 2>/dev/null || true
+    
+    # Remove STOP file after cleanup
+    rm -f "$STATE/STOP" 2>/dev/null || true
+    
+    echo "✅ Cleanup complete. Starting services..."
     
     # Load configuration
     if [ -f "$ROOT/.env" ]; then
