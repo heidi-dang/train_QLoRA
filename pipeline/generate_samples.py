@@ -13,6 +13,10 @@ from threading import Lock
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pipeline import grok_client
+try:
+    from pipeline import telemetry
+except ImportError:
+    telemetry = None
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 AI_LAB = os.path.join(ROOT, 'data', 'ai-lab')
@@ -125,6 +129,9 @@ def main():
     total_files = len(files)
     total_samples = 0
     
+    if telemetry:
+        telemetry.update_progress("generate", 0, 4, 0, total_files)
+    
     print(f'Processing {total_files} files with {MAX_WORKERS} workers...')
     
     with tqdm(total=total_files, desc='Generating', unit='file') as pbar:
@@ -143,6 +150,12 @@ def main():
                 pbar.update(1)
                 fname = Path(path).name[:25] + '..' if len(Path(path).name) > 25 else Path(path).name
                 pbar.set_postfix_str(f'samples={total_samples} file={fname}')
+                
+                if telemetry:
+                    telemetry.update_progress("generate", 0, 4, pbar.n, total_files)
+    
+    if telemetry:
+        telemetry.update_progress("generate", 0, 4, total_files, total_files)
     
     print()
     logging.info('Generated %d samples from %d files', total_samples, total_files)

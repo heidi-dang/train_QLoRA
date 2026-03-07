@@ -5,6 +5,13 @@ import time
 import threading
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from pipeline import telemetry
+except ImportError:
+    telemetry = None
 
 logging.basicConfig(level=logging.INFO)
 
@@ -47,9 +54,10 @@ class TeacherAPIClient:
     def _chunk(self, code: str) -> str:
         return code[:MAX_CODE_CHUNK] + "\n... [truncated]" if len(code) > MAX_CODE_CHUNK else code
 
-    def _call_grok(self, prompt: str, code: str) -> str:
+    def _call_grok(self, prompt: str, code: str) -> tuple:
         code = self._chunk(code)
         logging.info(f"Grok API call len(code)={len(code)}")
+        prompt_tokens_estimate = len(prompt) // 4 + len(code) // 4
         for attempt in range(3):
             try:
                 self._rate_limit()
@@ -63,19 +71,29 @@ class TeacherAPIClient:
                     timeout=TIMEOUT)
                 if resp.status_code == 200:
                     result = resp.json()
-                    _log_tokens(result.get("usage", {}).get("total_tokens", 0))
-                    return result["choices"][0]["message"]["content"]
+                    usage = result.get("usage", {})
+                    actual_prompt = usage.get("prompt_tokens", prompt_tokens_estimate)
+                    actual_completion = usage.get("completion_tokens", 0)
+                    _log_tokens(actual_prompt + actual_completion)
+                    if telemetry:
+                        telemetry.record_api_call("grok", self.model, actual_prompt, actual_completion, True)
+                    return result["choices"][0]["message"]["content"], True
                 else:
-                    logging.error(f"Grok error {resp.status_code}: {resp.text[:100]}")
-                    return ""
+                    logging.error(f"Grok error {resp.status_code}")
+                    if telemetry:
+                        telemetry.record_api_call("grok", self.model, 0, 0, False)
+                    return "", False
             except Exception as e:
                 logging.error(f"Grok API failed: {e}")
                 if attempt < 2:
                     time.sleep(2 ** attempt)
-        return ""
+        if telemetry:
+            telemetry.record_api_call("grok", self.model, 0, 0, False)
+        return "", False
 
-    def _call_openai(self, prompt: str, code: str) -> str:
+    def _call_openai(self, prompt: str, code: str) -> tuple:
         code = self._chunk(code)
+        prompt_tokens_estimate = len(prompt) // 4 + len(code) // 4
         for attempt in range(3):
             try:
                 self._rate_limit()
@@ -89,22 +107,31 @@ class TeacherAPIClient:
                     timeout=TIMEOUT)
                 if resp.status_code == 200:
                     result = resp.json()
-                    _log_tokens(result.get("usage", {}).get("total_tokens", 0))
-                    return result["choices"][0]["message"]["content"]
+                    usage = result.get("usage", {})
+                    actual_prompt = usage.get("prompt_tokens", prompt_tokens_estimate)
+                    actual_completion = usage.get("completion_tokens", 0)
+                    _log_tokens(actual_prompt + actual_completion)
+                    if telemetry:
+                        telemetry.record_api_call("openai", self.model, actual_prompt, actual_completion, True)
+                    return result["choices"][0]["message"]["content"], True
             except Exception as e:
                 logging.error(f"OpenAI failed: {e}")
                 if attempt < 2:
                     time.sleep(2 ** attempt)
-        return ""
+        if telemetry:
+            telemetry.record_api_call("openai", self.model, 0, 0, False)
+        return "", False
 
     def generate(self, prompt: str, code: str) -> str:
         if "grok" in self.provider:
-            result = self._call_grok(prompt, code)
+            result, success = self._call_grok(prompt, code)
             if result:
                 return result
-            return self._call_openai(prompt, code)
+            result2, _ = self._call_openai(prompt, code)
+            return result2
         elif "openai" in self.provider or "gpt" in self.provider:
-            return self._call_openai(prompt, code)
+            result, _ = self._call_openai(prompt, code)
+            return result
         logging.error(f"No valid provider: {self.provider}")
         return ""
 

@@ -1,0 +1,1 @@
+{"status": "idle", "current_stage": "", "stage_index": 0, "total_stages": 4, "stage_percent": 0.0, "overall_percent": 0.0, "completed_units": 0, "total_units": 0, "eta_seconds": 0, "usage": {"provider": "", "model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "request_count": 0, "successful_requests": 0, "failed_requests": 0, "spend_usd": 0.0}}
