@@ -1,0 +1,502 @@
+[
+  {
+    "name": "public-apis/public-apis",
+    "url": "https://github.com/public-apis/public-apis.git",
+    "stars": 404837,
+    "forks": 43692,
+    "language": "Python",
+    "description": "A collective list of free APIs",
+    "created_at": "2016-03-20T23:49:42Z",
+    "updated_at": "2026-03-07T03:41:45Z"
+  },
+  {
+    "name": "EbookFoundation/free-programming-books",
+    "url": "https://github.com/EbookFoundation/free-programming-books.git",
+    "stars": 383681,
+    "forks": 66013,
+    "language": "Python",
+    "description": ":books: Freely available programming books",
+    "created_at": "2013-10-11T06:50:37Z",
+    "updated_at": "2026-03-07T03:15:32Z"
+  },
+  {
+    "name": "donnemartin/system-design-primer",
+    "url": "https://github.com/donnemartin/system-design-primer.git",
+    "stars": 337677,
+    "forks": 54707,
+    "language": "Python",
+    "description": "Learn how to design large-scale systems. Prep for the system design interview.  Includes Anki flashcards.",
+    "created_at": "2017-02-26T16:15:28Z",
+    "updated_at": "2026-03-07T03:41:37Z"
+  },
+  {
+    "name": "vinta/awesome-python",
+    "url": "https://github.com/vinta/awesome-python.git",
+    "stars": 285938,
+    "forks": 27304,
+    "language": "Python",
+    "description": "An opinionated list of awesome Python frameworks, libraries, software and resources.",
+    "created_at": "2014-06-27T21:00:06Z",
+    "updated_at": "2026-03-07T03:40:57Z"
+  },
+  {
+    "name": "facebook/react",
+    "url": "https://github.com/facebook/react.git",
+    "stars": 243684,
+    "forks": 50661,
+    "language": "JavaScript",
+    "description": "The library for web and native user interfaces.",
+    "created_at": "2013-05-24T16:15:54Z",
+    "updated_at": "2026-03-07T03:42:18Z"
+  },
+  {
+    "name": "TheAlgorithms/Python",
+    "url": "https://github.com/TheAlgorithms/Python.git",
+    "stars": 218397,
+    "forks": 50120,
+    "language": "Python",
+    "description": "All Algorithms implemented in Python",
+    "created_at": "2016-07-16T09:44:01Z",
+    "updated_at": "2026-03-07T03:00:38Z"
+  },
+  {
+    "name": "trekhleb/javascript-algorithms",
+    "url": "https://github.com/trekhleb/javascript-algorithms.git",
+    "stars": 195747,
+    "forks": 31113,
+    "language": "JavaScript",
+    "description": "\ud83d\udcdd Algorithms and data structures implemented in JavaScript with explanations and links to further readings",
+    "created_at": "2018-03-24T07:47:04Z",
+    "updated_at": "2026-03-07T02:46:45Z"
+  },
+  {
+    "name": "Significant-Gravitas/AutoGPT",
+    "url": "https://github.com/Significant-Gravitas/AutoGPT.git",
+    "stars": 182229,
+    "forks": 46203,
+    "language": "Python",
+    "description": "AutoGPT is the vision of accessible AI for everyone, to use and to build on. Our mission is to provide the tools, so that you can focus on what matters.",
+    "created_at": "2023-03-16T09:21:07Z",
+    "updated_at": "2026-03-07T02:30:47Z"
+  },
+  {
+    "name": "AUTOMATIC1111/stable-diffusion-webui",
+    "url": "https://github.com/AUTOMATIC1111/stable-diffusion-webui.git",
+    "stars": 161523,
+    "forks": 30124,
+    "language": "Python",
+    "description": "Stable Diffusion web UI",
+    "created_at": "2022-08-22T14:05:26Z",
+    "updated_at": "2026-03-07T03:25:31Z"
+  },
+  {
+    "name": "huggingface/transformers",
+    "url": "https://github.com/huggingface/transformers.git",
+    "stars": 157503,
+    "forks": 32313,
+    "language": "Python",
+    "description": "\ud83e\udd17 Transformers: the model-definition framework for state-of-the-art machine learning models in text, vision, audio, and multimodal models, for both inference and training. ",
+    "created_at": "2018-10-29T13:56:00Z",
+    "updated_at": "2026-03-07T03:45:23Z"
+  },
+  {
+    "name": "yt-dlp/yt-dlp",
+    "url": "https://github.com/yt-dlp/yt-dlp.git",
+    "stars": 149947,
+    "forks": 12148,
+    "language": "Python",
+    "description": "A feature-rich command-line audio/video downloader",
+    "created_at": "2020-10-26T04:22:55Z",
+    "updated_at": "2026-03-07T03:37:11Z"
+  },
+  {
+    "name": "airbnb/javascript",
+    "url": "https://github.com/airbnb/javascript.git",
+    "stars": 148099,
+    "forks": 26776,
+    "language": "JavaScript",
+    "description": "JavaScript Style Guide",
+    "created_at": "2012-11-01T23:13:50Z",
+    "updated_at": "2026-03-07T00:11:46Z"
+  },
+  {
+    "name": "langflow-ai/langflow",
+    "url": "https://github.com/langflow-ai/langflow.git",
+    "stars": 145329,
+    "forks": 8525,
+    "language": "Python",
+    "description": "Langflow is a powerful tool for building and deploying AI-powered agents and workflows.",
+    "created_at": "2023-02-08T22:28:03Z",
+    "updated_at": "2026-03-07T03:16:31Z"
+  },
+  {
+    "name": "521xueweihan/HelloGitHub",
+    "url": "https://github.com/521xueweihan/HelloGitHub.git",
+    "stars": 145049,
+    "forks": 11176,
+    "language": "Python",
+    "description": ":octocat: \u5206\u4eab GitHub \u4e0a\u6709\u8da3\u3001\u5165\u95e8\u7ea7\u7684\u5f00\u6e90\u9879\u76ee\u3002Share interesting, entry-level open source projects on GitHub.",
+    "created_at": "2016-05-04T06:24:11Z",
+    "updated_at": "2026-03-07T02:57:55Z"
+  },
+  {
+    "name": "ytdl-org/youtube-dl",
+    "url": "https://github.com/ytdl-org/youtube-dl.git",
+    "stars": 139808,
+    "forks": 10601,
+    "language": "Python",
+    "description": "Command-line program to download videos from YouTube.com and other video sites",
+    "created_at": "2010-10-31T14:35:07Z",
+    "updated_at": "2026-03-07T00:40:18Z"
+  },
+  {
+    "name": "vercel/next.js",
+    "url": "https://github.com/vercel/next.js.git",
+    "stars": 138188,
+    "forks": 30562,
+    "language": "JavaScript",
+    "description": "The React Framework",
+    "created_at": "2016-10-05T23:32:51Z",
+    "updated_at": "2026-03-07T03:38:19Z"
+  },
+  {
+    "name": "langchain-ai/langchain",
+    "url": "https://github.com/langchain-ai/langchain.git",
+    "stars": 128490,
+    "forks": 21096,
+    "language": "Python",
+    "description": "The agent engineering platform",
+    "created_at": "2022-10-17T02:58:36Z",
+    "updated_at": "2026-03-07T03:24:08Z"
+  },
+  {
+    "name": "Chalarangelo/30-seconds-of-code",
+    "url": "https://github.com/Chalarangelo/30-seconds-of-code.git",
+    "stars": 126972,
+    "forks": 12442,
+    "language": "JavaScript",
+    "description": "Coding articles to level up your development skills",
+    "created_at": "2017-11-29T17:35:03Z",
+    "updated_at": "2026-03-07T03:11:13Z"
+  },
+  {
+    "name": "open-webui/open-webui",
+    "url": "https://github.com/open-webui/open-webui.git",
+    "stars": 126010,
+    "forks": 17838,
+    "language": "Python",
+    "description": "User-friendly AI Interface (Supports Ollama, OpenAI API, ...)",
+    "created_at": "2023-10-06T22:08:27Z",
+    "updated_at": "2026-03-07T03:35:09Z"
+  },
+  {
+    "name": "nodejs/node",
+    "url": "https://github.com/nodejs/node.git",
+    "stars": 116114,
+    "forks": 34941,
+    "language": "JavaScript",
+    "description": "Node.js JavaScript runtime \u2728\ud83d\udc22\ud83d\ude80\u2728",
+    "created_at": "2014-11-26T19:57:11Z",
+    "updated_at": "2026-03-07T03:41:09Z"
+  },
+  {
+    "name": "mrdoob/three.js",
+    "url": "https://github.com/mrdoob/three.js.git",
+    "stars": 111207,
+    "forks": 36283,
+    "language": "JavaScript",
+    "description": "JavaScript 3D Library.",
+    "created_at": "2010-03-23T18:58:01Z",
+    "updated_at": "2026-03-07T03:17:10Z"
+  },
+  {
+    "name": "axios/axios",
+    "url": "https://github.com/axios/axios.git",
+    "stars": 108590,
+    "forks": 11535,
+    "language": "JavaScript",
+    "description": "Promise based HTTP client for the browser and node.js",
+    "created_at": "2014-08-18T22:30:27Z",
+    "updated_at": "2026-03-07T03:45:01Z"
+  },
+  {
+    "name": "Comfy-Org/ComfyUI",
+    "url": "https://github.com/Comfy-Org/ComfyUI.git",
+    "stars": 105062,
+    "forks": 12045,
+    "language": "Python",
+    "description": "The most powerful and modular diffusion model GUI, api and backend with a graph/nodes interface.",
+    "created_at": "2023-01-17T03:15:56Z",
+    "updated_at": "2026-03-07T03:25:37Z"
+  },
+  {
+    "name": "facebook/create-react-app",
+    "url": "https://github.com/facebook/create-react-app.git",
+    "stars": 103825,
+    "forks": 27113,
+    "language": "JavaScript",
+    "description": "Set up a modern web app by running one command.",
+    "created_at": "2016-07-17T14:55:11Z",
+    "updated_at": "2026-03-06T21:40:30Z"
+  },
+  {
+    "name": "deepseek-ai/DeepSeek-V3",
+    "url": "https://github.com/deepseek-ai/DeepSeek-V3.git",
+    "stars": 101916,
+    "forks": 16548,
+    "language": "Python",
+    "description": null,
+    "created_at": "2024-12-26T09:52:40Z",
+    "updated_at": "2026-03-07T02:00:29Z"
+  },
+  {
+    "name": "Shubhamsaboo/awesome-llm-apps",
+    "url": "https://github.com/Shubhamsaboo/awesome-llm-apps.git",
+    "stars": 100075,
+    "forks": 14542,
+    "language": "Python",
+    "description": "Collection of awesome LLM apps with AI Agents and RAG using OpenAI, Anthropic, Gemini and opensource models.",
+    "created_at": "2024-04-29T05:30:25Z",
+    "updated_at": "2026-03-07T03:39:31Z"
+  },
+  {
+    "name": "jaywcjlove/awesome-mac",
+    "url": "https://github.com/jaywcjlove/awesome-mac.git",
+    "stars": 99608,
+    "forks": 7451,
+    "language": "JavaScript",
+    "description": "\uf8ff Now we have become very big, Different from the original idea. Collect premium software in various categories.",
+    "created_at": "2016-07-17T15:33:47Z",
+    "updated_at": "2026-03-07T02:50:00Z"
+  },
+  {
+    "name": "mui/material-ui",
+    "url": "https://github.com/mui/material-ui.git",
+    "stars": 98012,
+    "forks": 32712,
+    "language": "JavaScript",
+    "description": "Material UI: Comprehensive React component library that implements Google's Material Design. Free forever.",
+    "created_at": "2014-08-18T19:11:54Z",
+    "updated_at": "2026-03-07T02:00:17Z"
+  },
+  {
+    "name": "pytorch/pytorch",
+    "url": "https://github.com/pytorch/pytorch.git",
+    "stars": 98010,
+    "forks": 27098,
+    "language": "Python",
+    "description": "Tensors and Dynamic neural networks in Python with strong GPU acceleration",
+    "created_at": "2016-08-13T05:26:41Z",
+    "updated_at": "2026-03-07T03:43:00Z"
+  },
+  {
+    "name": "fastapi/fastapi",
+    "url": "https://github.com/fastapi/fastapi.git",
+    "stars": 95962,
+    "forks": 8795,
+    "language": "Python",
+    "description": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
+    "created_at": "2018-12-08T08:21:47Z",
+    "updated_at": "2026-03-07T03:24:45Z"
+  },
+  {
+    "name": "nvbn/thefuck",
+    "url": "https://github.com/nvbn/thefuck.git",
+    "stars": 95623,
+    "forks": 3845,
+    "language": "Python",
+    "description": "Magnificent app which corrects your previous console command.",
+    "created_at": "2015-04-08T15:08:04Z",
+    "updated_at": "2026-03-07T02:45:48Z"
+  },
+  {
+    "name": "openai/whisper",
+    "url": "https://github.com/openai/whisper.git",
+    "stars": 95553,
+    "forks": 11831,
+    "language": "Python",
+    "description": "Robust Speech Recognition via Large-Scale Weak Supervision",
+    "created_at": "2022-09-16T20:02:54Z",
+    "updated_at": "2026-03-07T03:02:17Z"
+  },
+  {
+    "name": "microsoft/Web-Dev-For-Beginners",
+    "url": "https://github.com/microsoft/Web-Dev-For-Beginners.git",
+    "stars": 95391,
+    "forks": 15212,
+    "language": "JavaScript",
+    "description": "24 Lessons, 12 Weeks, Get Started as a Web Developer",
+    "created_at": "2020-11-10T02:44:00Z",
+    "updated_at": "2026-03-07T03:43:25Z"
+  },
+  {
+    "name": "ryanmcdermott/clean-code-javascript",
+    "url": "https://github.com/ryanmcdermott/clean-code-javascript.git",
+    "stars": 94313,
+    "forks": 12503,
+    "language": "JavaScript",
+    "description": "Clean Code concepts adapted for JavaScript",
+    "created_at": "2016-11-25T22:25:41Z",
+    "updated_at": "2026-03-06T18:14:51Z"
+  },
+  {
+    "name": "microsoft/markitdown",
+    "url": "https://github.com/microsoft/markitdown.git",
+    "stars": 90236,
+    "forks": 5305,
+    "language": "Python",
+    "description": "Python tool for converting files and office documents to Markdown.",
+    "created_at": "2024-11-13T19:56:40Z",
+    "updated_at": "2026-03-07T03:18:49Z"
+  },
+  {
+    "name": "django/django",
+    "url": "https://github.com/django/django.git",
+    "stars": 86993,
+    "forks": 33718,
+    "language": "Python",
+    "description": "The Web framework for perfectionists with deadlines.",
+    "created_at": "2012-04-28T02:47:18Z",
+    "updated_at": "2026-03-07T03:42:20Z"
+  },
+  {
+    "name": "anthropics/skills",
+    "url": "https://github.com/anthropics/skills.git",
+    "stars": 86049,
+    "forks": 9090,
+    "language": "Python",
+    "description": "Public repository for Agent Skills",
+    "created_at": "2025-09-22T15:53:31Z",
+    "updated_at": "2026-03-07T03:43:04Z"
+  },
+  {
+    "name": "sveltejs/svelte",
+    "url": "https://github.com/sveltejs/svelte.git",
+    "stars": 86018,
+    "forks": 4796,
+    "language": "JavaScript",
+    "description": "web development for the rest of us",
+    "created_at": "2016-11-20T18:13:05Z",
+    "updated_at": "2026-03-07T02:12:27Z"
+  },
+  {
+    "name": "home-assistant/core",
+    "url": "https://github.com/home-assistant/core.git",
+    "stars": 85181,
+    "forks": 36917,
+    "language": "Python",
+    "description": ":house_with_garden: Open source home automation that puts local control and privacy first.",
+    "created_at": "2013-09-17T07:29:48Z",
+    "updated_at": "2026-03-07T02:34:58Z"
+  },
+  {
+    "name": "3b1b/manim",
+    "url": "https://github.com/3b1b/manim.git",
+    "stars": 85004,
+    "forks": 7151,
+    "language": "Python",
+    "description": "Animation engine for explanatory math videos",
+    "created_at": "2015-03-22T18:50:58Z",
+    "updated_at": "2026-03-07T03:17:14Z"
+  },
+  {
+    "name": "louislam/uptime-kuma",
+    "url": "https://github.com/louislam/uptime-kuma.git",
+    "stars": 83731,
+    "forks": 7481,
+    "language": "JavaScript",
+    "description": "A fancy self-hosted monitoring tool",
+    "created_at": "2021-07-03T01:02:42Z",
+    "updated_at": "2026-03-07T03:30:55Z"
+  },
+  {
+    "name": "bregman-arie/devops-exercises",
+    "url": "https://github.com/bregman-arie/devops-exercises.git",
+    "stars": 81406,
+    "forks": 18809,
+    "language": "Python",
+    "description": "Linux, Jenkins, AWS, SRE, Prometheus, Docker, Python, Ansible, Git, Kubernetes, Terraform, OpenStack, SQL, NoSQL, Azure, GCP, DNS, Elastic, Network, Virtualization. DevOps Interview Questions",
+    "created_at": "2019-10-03T17:31:21Z",
+    "updated_at": "2026-03-07T02:35:27Z"
+  },
+  {
+    "name": "hacksider/Deep-Live-Cam",
+    "url": "https://github.com/hacksider/Deep-Live-Cam.git",
+    "stars": 79876,
+    "forks": 11638,
+    "language": "Python",
+    "description": "real time face swap and one-click video deepfake with only a single image",
+    "created_at": "2023-09-24T13:19:31Z",
+    "updated_at": "2026-03-07T00:48:20Z"
+  },
+  {
+    "name": "browser-use/browser-use",
+    "url": "https://github.com/browser-use/browser-use.git",
+    "stars": 79800,
+    "forks": 9433,
+    "language": "Python",
+    "description": "\ud83c\udf10 Make websites accessible for AI agents. Automate tasks online with ease.",
+    "created_at": "2024-10-31T16:00:56Z",
+    "updated_at": "2026-03-07T03:37:13Z"
+  },
+  {
+    "name": "fighting41love/funNLP",
+    "url": "https://github.com/fighting41love/funNLP.git",
+    "stars": 79228,
+    "forks": 15150,
+    "language": "Python",
+    "description": "\u4e2d\u82f1\u6587\u654f\u611f\u8bcd\u3001\u8bed\u8a00\u68c0\u6d4b\u3001\u4e2d\u5916\u624b\u673a/\u7535\u8bdd\u5f52\u5c5e\u5730/\u8fd0\u8425\u5546\u67e5\u8be2\u3001\u540d\u5b57\u63a8\u65ad\u6027\u522b\u3001\u624b\u673a\u53f7\u62bd\u53d6\u3001\u8eab\u4efd\u8bc1\u62bd\u53d6\u3001\u90ae\u7bb1\u62bd\u53d6\u3001\u4e2d\u65e5\u6587\u4eba\u540d\u5e93\u3001\u4e2d\u6587\u7f29\u5199\u5e93\u3001\u62c6\u5b57\u8bcd\u5178\u3001\u8bcd\u6c47\u60c5\u611f\u503c\u3001\u505c\u7528\u8bcd\u3001\u53cd\u52a8\u8bcd\u8868\u3001\u66b4\u6050\u8bcd\u8868\u3001\u7e41\u7b80\u4f53\u8f6c\u6362\u3001\u82f1\u6587\u6a21\u62df\u4e2d\u6587\u53d1\u97f3\u3001\u6c6a\u5cf0\u6b4c\u8bcd\u751f\u6210\u5668\u3001\u804c\u4e1a\u540d\u79f0\u8bcd\u5e93\u3001\u540c\u4e49\u8bcd\u5e93\u3001\u53cd\u4e49\u8bcd\u5e93\u3001\u5426\u5b9a\u8bcd\u5e93\u3001\u6c7d\u8f66\u54c1\u724c\u8bcd\u5e93\u3001\u6c7d\u8f66\u96f6\u4ef6\u8bcd\u5e93\u3001\u8fde\u7eed\u82f1\u6587\u5207\u5272\u3001\u5404\u79cd\u4e2d\u6587\u8bcd\u5411\u91cf\u3001\u516c\u53f8\u540d\u5b57\u5927\u5168\u3001\u53e4\u8bd7\u8bcd\u5e93\u3001IT\u8bcd\u5e93\u3001\u8d22\u7ecf\u8bcd\u5e93\u3001\u6210\u8bed\u8bcd\u5e93\u3001\u5730\u540d\u8bcd\u5e93\u3001\u5386\u53f2\u540d\u4eba\u8bcd\u5e93\u3001\u8bd7\u8bcd\u8bcd\u5e93\u3001\u533b\u5b66\u8bcd\u5e93\u3001\u996e\u98df\u8bcd\u5e93\u3001\u6cd5\u5f8b\u8bcd\u5e93\u3001\u6c7d\u8f66\u8bcd\u5e93\u3001\u52a8\u7269\u8bcd\u5e93\u3001\u4e2d\u6587\u804a\u5929\u8bed\u6599\u3001\u4e2d\u6587\u8c23\u8a00\u6570\u636e\u3001\u767e\u5ea6\u4e2d\u6587\u95ee\u7b54\u6570\u636e\u96c6\u3001\u53e5\u5b50\u76f8\u4f3c\u5ea6\u5339\u914d\u7b97\u6cd5\u96c6\u5408\u3001bert\u8d44\u6e90\u3001\u6587\u672c\u751f\u6210&\u6458\u8981\u76f8\u5173\u5de5\u5177\u3001cocoNLP\u4fe1\u606f\u62bd\u53d6\u5de5\u5177\u3001\u56fd\u5185\u7535\u8bdd\u53f7\u7801\u6b63\u5219\u5339\u914d\u3001\u6e05\u534e\u5927\u5b66XLORE:\u4e2d\u82f1\u6587\u8de8\u8bed\u8a00\u767e\u79d1\u77e5\u8bc6\u56fe\u8c31\u3001\u6e05\u534e\u5927\u5b66\u4eba\u5de5\u667a\u80fd\u6280\u672f\u7cfb\u5217\u62a5\u544a\u3001\u81ea\u7136\u8bed\u8a00\u751f\u6210\u3001NLU\u592a\u96be\u4e86\u7cfb\u5217\u3001\u81ea\u52a8\u5bf9\u8054\u6570\u636e\u53ca\u673a\u5668\u4eba\u3001\u7528\u6237\u540d\u9ed1\u540d\u5355\u5217\u8868\u3001\u7f6a\u540d\u6cd5\u52a1\u540d\u8bcd\u53ca\u5206\u7c7b\u6a21\u578b\u3001\u5fae\u4fe1\u516c\u4f17\u53f7\u8bed\u6599\u3001cs224n\u6df1\u5ea6\u5b66\u4e60\u81ea\u7136\u8bed\u8a00\u5904\u7406\u8bfe\u7a0b\u3001\u4e2d\u6587\u624b\u5199\u6c49\u5b57\u8bc6\u522b\u3001\u4e2d\u6587\u81ea\u7136\u8bed\u8a00\u5904\u7406 \u8bed\u6599/\u6570\u636e\u96c6\u3001\u53d8\u91cf\u547d\u540d\u795e\u5668\u3001\u5206\u8bcd\u8bed\u6599\u5e93+\u4ee3\u7801\u3001\u4efb\u52a1\u578b\u5bf9\u8bdd\u82f1\u6587\u6570\u636e\u96c6\u3001ASR \u8bed\u97f3\u6570\u636e\u96c6 + \u57fa\u4e8e\u6df1\u5ea6\u5b66\u4e60\u7684\u4e2d\u6587\u8bed\u97f3\u8bc6\u522b\u7cfb\u7edf\u3001\u7b11\u58f0\u68c0\u6d4b\u5668\u3001Microsoft\u591a\u8bed\u8a00\u6570\u5b57/\u5355\u4f4d/\u5982\u65e5\u671f\u65f6\u95f4\u8bc6\u522b\u5305\u3001\u4e2d\u534e\u65b0\u534e\u5b57\u5178\u6570\u636e\u5e93\u53caapi(\u5305\u62ec\u5e38\u7528\u6b47\u540e\u8bed\u3001\u6210\u8bed\u3001\u8bcd\u8bed\u548c\u6c49\u5b57)\u3001\u6587\u6863\u56fe\u8c31\u81ea\u52a8\u751f\u6210\u3001SpaCy \u4e2d\u6587\u6a21\u578b\u3001Common Voice\u8bed\u97f3\u8bc6\u522b\u6570\u636e\u96c6\u65b0\u7248\u3001\u795e\u7ecf\u7f51\u7edc\u5173\u7cfb\u62bd\u53d6\u3001\u57fa\u4e8ebert\u7684\u547d\u540d\u5b9e\u4f53\u8bc6\u522b\u3001\u5173\u952e\u8bcd(Keyphrase)\u62bd\u53d6\u5305pke\u3001\u57fa\u4e8e\u533b\u7597\u9886\u57df\u77e5\u8bc6\u56fe\u8c31\u7684\u95ee\u7b54\u7cfb\u7edf\u3001\u57fa\u4e8e\u4f9d\u5b58\u53e5\u6cd5\u4e0e\u8bed\u4e49\u89d2\u8272\u6807\u6ce8\u7684\u4e8b\u4ef6\u4e09\u5143\u7ec4\u62bd\u53d6\u3001\u4f9d\u5b58\u53e5\u6cd5\u5206\u67904\u4e07\u53e5\u9ad8\u8d28\u91cf\u6807\u6ce8\u6570\u636e\u3001cnocr\uff1a\u7528\u6765\u505a\u4e2d\u6587OCR\u7684Python3\u5305\u3001\u4e2d\u6587\u4eba\u7269\u5173\u7cfb\u77e5\u8bc6\u56fe\u8c31\u9879\u76ee\u3001\u4e2d\u6587nlp\u7ade\u8d5b\u9879\u76ee\u53ca\u4ee3\u7801\u6c47\u603b\u3001\u4e2d\u6587\u5b57\u7b26\u6570\u636e\u3001speech-aligner: \u4ece\u201c\u4eba\u58f0\u8bed\u97f3\u201d\u53ca\u5176\u201c\u8bed\u8a00\u6587\u672c\u201d\u4ea7\u751f\u97f3\u7d20\u7ea7\u522b\u65f6\u95f4\u5bf9\u9f50\u6807\u6ce8\u7684\u5de5\u5177\u3001AmpliGraph: \u77e5\u8bc6\u56fe\u8c31\u8868\u793a\u5b66\u4e60(Python)\u5e93\uff1a\u77e5\u8bc6\u56fe\u8c31\u6982\u5ff5\u94fe\u63a5\u9884\u6d4b\u3001Scattertext \u6587\u672c\u53ef\u89c6\u5316(python)\u3001\u8bed\u8a00/\u77e5\u8bc6\u8868\u793a\u5de5\u5177\uff1aBERT & ERNIE\u3001\u4e2d\u6587\u5bf9\u6bd4\u82f1\u6587\u81ea\u7136\u8bed\u8a00\u5904\u7406NLP\u7684\u533a\u522b\u7efc\u8ff0\u3001Synonyms\u4e2d\u6587\u8fd1\u4e49\u8bcd\u5de5\u5177\u5305\u3001HarvestText\u9886\u57df\u81ea\u9002\u5e94\u6587\u672c\u6316\u6398\u5de5\u5177\uff08\u65b0\u8bcd\u53d1\u73b0-\u60c5\u611f\u5206\u6790-\u5b9e\u4f53\u94fe\u63a5\u7b49\uff09\u3001word2word\uff1a(Python)\u65b9\u4fbf\u6613\u7528\u7684\u591a\u8bed\u8a00\u8bcd-\u8bcd\u5bf9\u96c6\uff1a62\u79cd\u8bed\u8a00/3,564\u4e2a\u591a\u8bed\u8a00\u5bf9\u3001\u8bed\u97f3\u8bc6\u522b\u8bed\u6599\u751f\u6210\u5de5\u5177\uff1a\u4ece\u5177\u6709\u97f3\u9891/\u5b57\u5e55\u7684\u5728\u7ebf\u89c6\u9891\u521b\u5efa\u81ea\u52a8\u8bed\u97f3\u8bc6\u522b(ASR)\u8bed\u6599\u5e93\u3001\u6784\u5efa\u533b\u7597\u5b9e\u4f53\u8bc6\u522b\u7684\u6a21\u578b\uff08\u5305\u542b\u8bcd\u5178\u548c\u8bed\u6599\u6807\u6ce8\uff09\u3001\u5355\u6587\u6863\u975e\u76d1\u7763\u7684\u5173\u952e\u8bcd\u62bd\u53d6\u3001Kashgari\u4e2d\u4f7f\u7528gpt-2\u8bed\u8a00\u6a21\u578b\u3001\u5f00\u6e90\u7684\u91d1\u878d\u6295\u8d44\u6570\u636e\u63d0\u53d6\u5de5\u5177\u3001\u6587\u672c\u81ea\u52a8\u6458\u8981\u5e93TextTeaser: \u4ec5\u652f\u6301\u82f1\u6587\u3001\u4eba\u6c11\u65e5\u62a5\u8bed\u6599\u5904\u7406\u5de5\u5177\u96c6\u3001\u4e00\u4e9b\u5173\u4e8e\u81ea\u7136\u8bed\u8a00\u7684\u57fa\u672c\u6a21\u578b\u3001\u57fa\u4e8e14W\u6b4c\u66f2\u77e5\u8bc6\u5e93\u7684\u95ee\u7b54\u5c1d\u8bd5--\u529f\u80fd\u5305\u62ec\u6b4c\u8bcd\u63a5\u9f99and\u5df2\u77e5\u6b4c\u8bcd\u627e\u6b4c\u66f2\u4ee5\u53ca\u6b4c\u66f2\u6b4c\u624b\u6b4c\u8bcd\u4e09\u89d2\u5173\u7cfb\u7684\u95ee\u7b54\u3001\u57fa\u4e8eSiamese bilstm\u6a21\u578b\u7684\u76f8\u4f3c\u53e5\u5b50\u5224\u5b9a\u6a21\u578b\u5e76\u63d0\u4f9b\u8bad\u7ec3\u6570\u636e\u96c6\u548c\u6d4b\u8bd5\u6570\u636e\u96c6\u3001\u7528Transformer\u7f16\u89e3\u7801\u6a21\u578b\u5b9e\u73b0\u7684\u6839\u636eHacker News\u6587\u7ae0\u6807\u9898\u81ea\u52a8\u751f\u6210\u8bc4\u8bba\u3001\u7528BERT\u8fdb\u884c\u5e8f\u5217\u6807\u8bb0\u548c\u6587\u672c\u5206\u7c7b\u7684\u6a21\u677f\u4ee3\u7801\u3001LitBank\uff1aNLP\u6570\u636e\u96c6\u2014\u2014\u652f\u6301\u81ea\u7136\u8bed\u8a00\u5904\u7406\u548c\u8ba1\u7b97\u4eba\u6587\u5b66\u79d1\u4efb\u52a1\u7684100\u90e8\u5e26\u6807\u8bb0\u82f1\u6587\u5c0f\u8bf4\u8bed\u6599\u3001\u767e\u5ea6\u5f00\u6e90\u7684\u57fa\u51c6\u4fe1\u606f\u62bd\u53d6\u7cfb\u7edf\u3001\u865a\u5047\u65b0\u95fb\u6570\u636e\u96c6\u3001Facebook: LAMA\u8bed\u8a00\u6a21\u578b\u5206\u6790\uff0c\u63d0\u4f9bTransformer-XL/BERT/ELMo/GPT\u9884\u8bad\u7ec3\u8bed\u8a00\u6a21\u578b\u7684\u7edf\u4e00\u8bbf\u95ee\u63a5\u53e3\u3001CommonsenseQA\uff1a\u9762\u5411\u5e38\u8bc6\u7684\u82f1\u6587QA\u6311\u6218\u3001\u4e2d\u6587\u77e5\u8bc6\u56fe\u8c31\u8d44\u6599\u3001\u6570\u636e\u53ca\u5de5\u5177\u3001\u5404\u5927\u516c\u53f8\u5185\u90e8\u91cc\u5927\u725b\u5206\u4eab\u7684\u6280\u672f\u6587\u6863 PDF \u6216\u8005 PPT\u3001\u81ea\u7136\u8bed\u8a00\u751f\u6210SQL\u8bed\u53e5\uff08\u82f1\u6587\uff09\u3001\u4e2d\u6587NLP\u6570\u636e\u589e\u5f3a\uff08EDA\uff09\u5de5\u5177\u3001\u82f1\u6587NLP\u6570\u636e\u589e\u5f3a\u5de5\u5177 \u3001\u57fa\u4e8e\u533b\u836f\u77e5\u8bc6\u56fe\u8c31\u7684\u667a\u80fd\u95ee\u7b54\u7cfb\u7edf\u3001\u4eac\u4e1c\u5546\u54c1\u77e5\u8bc6\u56fe\u8c31\u3001\u57fa\u4e8emongodb\u5b58\u50a8\u7684\u519b\u4e8b\u9886\u57df\u77e5\u8bc6\u56fe\u8c31\u95ee\u7b54\u9879\u76ee\u3001\u57fa\u4e8e\u8fdc\u76d1\u7763\u7684\u4e2d\u6587\u5173\u7cfb\u62bd\u53d6\u3001\u8bed\u97f3\u60c5\u611f\u5206\u6790\u3001\u4e2d\u6587ULMFiT-\u60c5\u611f\u5206\u6790-\u6587\u672c\u5206\u7c7b-\u8bed\u6599\u53ca\u6a21\u578b\u3001\u4e00\u4e2a\u62cd\u7167\u505a\u9898\u7a0b\u5e8f\u3001\u4e16\u754c\u5404\u56fd\u5927\u89c4\u6a21\u4eba\u540d\u5e93\u3001\u4e00\u4e2a\u5229\u7528\u6709\u8da3\u4e2d\u6587\u8bed\u6599\u5e93 qingyun \u8bad\u7ec3\u51fa\u6765\u7684\u4e2d\u6587\u804a\u5929\u673a\u5668\u4eba\u3001\u4e2d\u6587\u804a\u5929\u673a\u5668\u4ebaseqGAN\u3001\u7701\u5e02\u533a\u9547\u884c\u653f\u533a\u5212\u6570\u636e\u5e26\u62fc\u97f3\u6807\u6ce8\u3001\u6559\u80b2\u884c\u4e1a\u65b0\u95fb\u8bed\u6599\u5e93\u5305\u542b\u81ea\u52a8\u6587\u6458\u529f\u80fd\u3001\u5f00\u653e\u4e86\u5bf9\u8bdd\u673a\u5668\u4eba-\u77e5\u8bc6\u56fe\u8c31-\u8bed\u4e49\u7406\u89e3-\u81ea\u7136\u8bed\u8a00\u5904\u7406\u5de5\u5177\u53ca\u6570\u636e\u3001\u4e2d\u6587\u77e5\u8bc6\u56fe\u8c31\uff1a\u57fa\u4e8e\u767e\u5ea6\u767e\u79d1\u4e2d\u6587\u9875\u9762-\u62bd\u53d6\u4e09\u5143\u7ec4\u4fe1\u606f-\u6784\u5efa\u4e2d\u6587\u77e5\u8bc6\u56fe\u8c31\u3001masr: \u4e2d\u6587\u8bed\u97f3\u8bc6\u522b-\u63d0\u4f9b\u9884\u8bad\u7ec3\u6a21\u578b-\u9ad8\u8bc6\u522b\u7387\u3001Python\u97f3\u9891\u6570\u636e\u589e\u5e7f\u5e93\u3001\u4e2d\u6587\u5168\u8bcd\u8986\u76d6BERT\u53ca\u4e24\u4efd\u9605\u8bfb\u7406\u89e3\u6570\u636e\u3001ConvLab\uff1a\u5f00\u6e90\u591a\u57df\u7aef\u5230\u7aef\u5bf9\u8bdd\u7cfb\u7edf\u5e73\u53f0\u3001\u4e2d\u6587\u81ea\u7136\u8bed\u8a00\u5904\u7406\u6570\u636e\u96c6\u3001\u57fa\u4e8e\u6700\u65b0\u7248\u672crasa\u642d\u5efa\u7684\u5bf9\u8bdd\u7cfb\u7edf\u3001\u57fa\u4e8eTensorFlow\u548cBERT\u7684\u7ba1\u9053\u5f0f\u5b9e\u4f53\u53ca\u5173\u7cfb\u62bd\u53d6\u3001\u4e00\u4e2a\u5c0f\u578b\u7684\u8bc1\u5238\u77e5\u8bc6\u56fe\u8c31/\u77e5\u8bc6\u5e93\u3001\u590d\u76d8\u6240\u6709NLP\u6bd4\u8d5b\u7684TOP\u65b9\u6848\u3001OpenCLaP\uff1a\u591a\u9886\u57df\u5f00\u6e90\u4e2d\u6587\u9884\u8bad\u7ec3\u8bed\u8a00\u6a21\u578b\u4ed3\u5e93\u3001UER\uff1a\u57fa\u4e8e\u4e0d\u540c\u8bed\u6599+\u7f16\u7801\u5668+\u76ee\u6807\u4efb\u52a1\u7684\u4e2d\u6587\u9884\u8bad\u7ec3\u6a21\u578b\u4ed3\u5e93\u3001\u4e2d\u6587\u81ea\u7136\u8bed\u8a00\u5904\u7406\u5411\u91cf\u5408\u96c6\u3001\u57fa\u4e8e\u91d1\u878d-\u53f8\u6cd5\u9886\u57df(\u517c\u6709\u95f2\u804a\u6027\u8d28)\u7684\u804a\u5929\u673a\u5668\u4eba\u3001g2pC\uff1a\u57fa\u4e8e\u4e0a\u4e0b\u6587\u7684\u6c49\u8bed\u8bfb\u97f3\u81ea\u52a8\u6807\u8bb0\u6a21\u5757\u3001Zincbase \u77e5\u8bc6\u56fe\u8c31\u6784\u5efa\u5de5\u5177\u5305\u3001\u8bd7\u6b4c\u8d28\u91cf\u8bc4\u4ef7/\u7ec6\u7c92\u5ea6\u60c5\u611f\u8bd7\u6b4c\u8bed\u6599\u5e93\u3001\u5feb\u901f\u8f6c\u5316\u300c\u4e2d\u6587\u6570\u5b57\u300d\u548c\u300c\u963f\u62c9\u4f2f\u6570\u5b57\u300d\u3001\u767e\u5ea6\u77e5\u9053\u95ee\u7b54\u8bed\u6599\u5e93\u3001\u57fa\u4e8e\u77e5\u8bc6\u56fe\u8c31\u7684\u95ee\u7b54\u7cfb\u7edf\u3001jieba_fast \u52a0\u901f\u7248\u7684jieba\u3001\u6b63\u5219\u8868\u8fbe\u5f0f\u6559\u7a0b\u3001\u4e2d\u6587\u9605\u8bfb\u7406\u89e3\u6570\u636e\u96c6\u3001\u57fa\u4e8eBERT\u7b49\u6700\u65b0\u8bed\u8a00\u6a21\u578b\u7684\u62bd\u53d6\u5f0f\u6458\u8981\u63d0\u53d6\u3001Python\u5229\u7528\u6df1\u5ea6\u5b66\u4e60\u8fdb\u884c\u6587\u672c\u6458\u8981\u7684\u7efc\u5408\u6307\u5357\u3001\u77e5\u8bc6\u56fe\u8c31\u6df1\u5ea6\u5b66\u4e60\u76f8\u5173\u8d44\u6599\u6574\u7406\u3001\u7ef4\u57fa\u5927\u89c4\u6a21\u5e73\u884c\u6587\u672c\u8bed\u6599\u3001StanfordNLP 0.2.0\uff1a\u7eafPython\u7248\u81ea\u7136\u8bed\u8a00\u5904\u7406\u5305\u3001NeuralNLP-NeuralClassifier\uff1a\u817e\u8baf\u5f00\u6e90\u6df1\u5ea6\u5b66\u4e60\u6587\u672c\u5206\u7c7b\u5de5\u5177\u3001\u7aef\u5230\u7aef\u7684\u5c01\u95ed\u57df\u5bf9\u8bdd\u7cfb\u7edf\u3001\u4e2d\u6587\u547d\u540d\u5b9e\u4f53\u8bc6\u522b\uff1aNeuroNER vs. BertNER\u3001\u65b0\u95fb\u4e8b\u4ef6\u7ebf\u7d22\u62bd\u53d6\u30012019\u5e74\u767e\u5ea6\u7684\u4e09\u5143\u7ec4\u62bd\u53d6\u6bd4\u8d5b\uff1a\u201c\u79d1\u5b66\u7a7a\u95f4\u961f\u201d\u6e90\u7801\u3001\u57fa\u4e8e\u4f9d\u5b58\u53e5\u6cd5\u7684\u5f00\u653e\u57df\u6587\u672c\u77e5\u8bc6\u4e09\u5143\u7ec4\u62bd\u53d6\u548c\u77e5\u8bc6\u5e93\u6784\u5efa\u3001\u4e2d\u6587\u7684GPT2\u8bad\u7ec3\u4ee3\u7801\u3001ML-NLP - \u673a\u5668\u5b66\u4e60(Machine Learning)NLP\u9762\u8bd5\u4e2d\u5e38\u8003\u5230\u7684\u77e5\u8bc6\u70b9\u548c\u4ee3\u7801\u5b9e\u73b0\u3001nlp4han:\u4e2d\u6587\u81ea\u7136\u8bed\u8a00\u5904\u7406\u5de5\u5177\u96c6(\u65ad\u53e5/\u5206\u8bcd/\u8bcd\u6027\u6807\u6ce8/\u7ec4\u5757/\u53e5\u6cd5\u5206\u6790/\u8bed\u4e49\u5206\u6790/NER/N\u5143\u8bed\u6cd5/HMM/\u4ee3\u8bcd\u6d88\u89e3/\u60c5\u611f\u5206\u6790/\u62fc\u5199\u68c0\u67e5\u3001XLM\uff1aFacebook\u7684\u8de8\u8bed\u8a00\u9884\u8bad\u7ec3\u8bed\u8a00\u6a21\u578b\u3001\u7528\u57fa\u4e8eBERT\u7684\u5fae\u8c03\u548c\u7279\u5f81\u63d0\u53d6\u65b9\u6cd5\u6765\u8fdb\u884c\u77e5\u8bc6\u56fe\u8c31\u767e\u5ea6\u767e\u79d1\u4eba\u7269\u8bcd\u6761\u5c5e\u6027\u62bd\u53d6\u3001\u4e2d\u6587\u81ea\u7136\u8bed\u8a00\u5904\u7406\u76f8\u5173\u7684\u5f00\u653e\u4efb\u52a1-\u6570\u636e\u96c6-\u5f53\u524d\u6700\u4f73\u7ed3\u679c\u3001CoupletAI - \u57fa\u4e8eCNN+Bi-LSTM+Attention \u7684\u81ea\u52a8\u5bf9\u5bf9\u8054\u7cfb\u7edf\u3001\u62bd\u8c61\u77e5\u8bc6\u56fe\u8c31\u3001MiningZhiDaoQACorpus - 580\u4e07\u767e\u5ea6\u77e5\u9053\u95ee\u7b54\u6570\u636e\u6316\u6398\u9879\u76ee\u3001brat rapid annotation tool: \u5e8f\u5217\u6807\u6ce8\u5de5\u5177\u3001\u5927\u89c4\u6a21\u4e2d\u6587\u77e5\u8bc6\u56fe\u8c31\u6570\u636e\uff1a1.4\u4ebf\u5b9e\u4f53\u3001\u6570\u636e\u589e\u5f3a\u5728\u673a\u5668\u7ffb\u8bd1\u53ca\u5176\u4ed6nlp\u4efb\u52a1\u4e2d\u7684\u5e94\u7528\u53ca\u6548\u679c\u3001allennlp\u9605\u8bfb\u7406\u89e3:\u652f\u6301\u591a\u79cd\u6570\u636e\u548c\u6a21\u578b\u3001PDF\u8868\u683c\u6570\u636e\u63d0\u53d6\u5de5\u5177 \u3001 Graphbrain\uff1aAI\u5f00\u6e90\u8f6f\u4ef6\u5e93\u548c\u79d1\u7814\u5de5\u5177\uff0c\u76ee\u7684\u662f\u4fc3\u8fdb\u81ea\u52a8\u610f\u4e49\u63d0\u53d6\u548c\u6587\u672c\u7406\u89e3\u4ee5\u53ca\u77e5\u8bc6\u7684\u63a2\u7d22\u548c\u63a8\u65ad\u3001\u7b80\u5386\u81ea\u52a8\u7b5b\u9009\u7cfb\u7edf\u3001\u57fa\u4e8e\u547d\u540d\u5b9e\u4f53\u8bc6\u522b\u7684\u7b80\u5386\u81ea\u52a8\u6458\u8981\u3001\u4e2d\u6587\u8bed\u8a00\u7406\u89e3\u6d4b\u8bc4\u57fa\u51c6\uff0c\u5305\u62ec\u4ee3\u8868\u6027\u7684\u6570\u636e\u96c6&\u57fa\u51c6\u6a21\u578b&\u8bed\u6599\u5e93&\u6392\u884c\u699c\u3001\u6811\u6d1e OCR \u6587\u5b57\u8bc6\u522b \u3001\u4ece\u5305\u542b\u8868\u683c\u7684\u626b\u63cf\u56fe\u7247\u4e2d\u8bc6\u522b\u8868\u683c\u548c\u6587\u5b57\u3001\u8bed\u58f0\u8fc1\u79fb\u3001Python\u53e3\u8bed\u81ea\u7136\u8bed\u8a00\u5904\u7406\u5de5\u5177\u96c6(\u82f1\u6587)\u3001 similarity\uff1a\u76f8\u4f3c\u5ea6\u8ba1\u7b97\u5de5\u5177\u5305\uff0cjava\u7f16\u5199\u3001\u6d77\u91cf\u4e2d\u6587\u9884\u8bad\u7ec3ALBERT\u6a21\u578b \u3001Transformers 2.0 \u3001\u57fa\u4e8e\u5927\u89c4\u6a21\u97f3\u9891\u6570\u636e\u96c6Audioset\u7684\u97f3\u9891\u589e\u5f3a \u3001Poplar\uff1a\u7f51\u9875\u7248\u81ea\u7136\u8bed\u8a00\u6807\u6ce8\u5de5\u5177\u3001\u56fe\u7247\u6587\u5b57\u53bb\u9664\uff0c\u53ef\u7528\u4e8e\u6f2b\u753b\u7ffb\u8bd1 \u3001186\u79cd\u8bed\u8a00\u7684\u6570\u5b57\u53eb\u6cd5\u5e93\u3001Amazon\u53d1\u5e03\u57fa\u4e8e\u77e5\u8bc6\u7684\u4eba-\u4eba\u5f00\u653e\u9886\u57df\u5bf9\u8bdd\u6570\u636e\u96c6 \u3001\u4e2d\u6587\u6587\u672c\u7ea0\u9519\u6a21\u5757\u4ee3\u7801\u3001\u7e41\u7b80\u4f53\u8f6c\u6362 \u3001 Python\u5b9e\u73b0\u7684\u591a\u79cd\u6587\u672c\u53ef\u8bfb\u6027\u8bc4\u4ef7\u6307\u6807\u3001\u7c7b\u4f3c\u4e8e\u4eba\u540d/\u5730\u540d/\u7ec4\u7ec7\u673a\u6784\u540d\u7684\u547d\u540d\u4f53\u8bc6\u522b\u6570\u636e\u96c6 \u3001\u4e1c\u5357\u5927\u5b66\u300a\u77e5\u8bc6\u56fe\u8c31\u300b\u7814\u7a76\u751f\u8bfe\u7a0b(\u8d44\u6599)\u3001. \u82f1\u6587\u62fc\u5199\u68c0\u67e5\u5e93 \u3001 wwsearch\u662f\u4f01\u4e1a\u5fae\u4fe1\u540e\u53f0\u81ea\u7814\u7684\u5168\u6587\u68c0\u7d22\u5f15\u64ce\u3001CHAMELEON\uff1a\u6df1\u5ea6\u5b66\u4e60\u65b0\u95fb\u63a8\u8350\u7cfb\u7edf\u5143\u67b6\u6784 \u3001 8\u7bc7\u8bba\u6587\u68b3\u7406BERT\u76f8\u5173\u6a21\u578b\u8fdb\u5c55\u4e0e\u53cd\u601d\u3001DocSearch\uff1a\u514d\u8d39\u6587\u6863\u641c\u7d22\u5f15\u64ce\u3001 LIDA\uff1a\u8f7b\u91cf\u4ea4\u4e92\u5f0f\u5bf9\u8bdd\u6807\u6ce8\u5de5\u5177 \u3001aili - the fastest in-memory index in the East \u4e1c\u534a\u7403\u6700\u5feb\u5e76\u53d1\u7d22\u5f15 \u3001\u77e5\u8bc6\u56fe\u8c31\u8f66\u97f3\u5de5\u4f5c\u9879\u76ee\u3001\u81ea\u7136\u8bed\u8a00\u751f\u6210\u8d44\u6e90\u5927\u5168 \u3001\u4e2d\u65e5\u97e9\u5206\u8bcd\u5e93mecab\u7684Python\u63a5\u53e3\u5e93\u3001\u4e2d\u6587\u6587\u672c\u6458\u8981/\u5173\u952e\u8bcd\u63d0\u53d6\u3001\u6c49\u5b57\u5b57\u7b26\u7279\u5f81\u63d0\u53d6\u5668 (featurizer)\uff0c\u63d0\u53d6\u6c49\u5b57\u7684\u7279\u5f81\uff08\u53d1\u97f3\u7279\u5f81\u3001\u5b57\u5f62\u7279\u5f81\uff09\u7528\u505a\u6df1\u5ea6\u5b66\u4e60\u7684\u7279\u5f81\u3001\u4e2d\u6587\u751f\u6210\u4efb\u52a1\u57fa\u51c6\u6d4b\u8bc4 \u3001\u4e2d\u6587\u7f29\u5199\u6570\u636e\u96c6\u3001\u4e2d\u6587\u4efb\u52a1\u57fa\u51c6\u6d4b\u8bc4 - \u4ee3\u8868\u6027\u7684\u6570\u636e\u96c6-\u57fa\u51c6(\u9884\u8bad\u7ec3)\u6a21\u578b-\u8bed\u6599\u5e93-baseline-\u5de5\u5177\u5305-\u6392\u884c\u699c\u3001PySS3\uff1a\u9762\u5411\u53ef\u89e3\u91caAI\u7684SS3\u6587\u672c\u5206\u7c7b\u5668\u673a\u5668\u53ef\u89c6\u5316\u5de5\u5177 \u3001\u4e2d\u6587NLP\u6570\u636e\u96c6\u5217\u8868\u3001COPE - \u683c\u5f8b\u8bd7\u7f16\u8f91\u7a0b\u5e8f\u3001doccano\uff1a\u57fa\u4e8e\u7f51\u9875\u7684\u5f00\u6e90\u534f\u540c\u591a\u8bed\u8a00\u6587\u672c\u6807\u6ce8\u5de5\u5177 \u3001PreNLP\uff1a\u81ea\u7136\u8bed\u8a00\u9884\u5904\u7406\u5e93\u3001\u7b80\u5355\u7684\u7b80\u5386\u89e3\u6790\u5668\uff0c\u7528\u6765\u4ece\u7b80\u5386\u4e2d\u63d0\u53d6\u5173\u952e\u4fe1\u606f\u3001\u7528\u4e8e\u4e2d\u6587\u95f2\u804a\u7684GPT2\u6a21\u578b\uff1aGPT2-chitchat\u3001\u57fa\u4e8e\u68c0\u7d22\u804a\u5929\u673a\u5668\u4eba\u591a\u8f6e\u54cd\u5e94\u9009\u62e9\u76f8\u5173\u8d44\u6e90\u5217\u8868(Leaderboards\u3001Datasets\u3001Papers)\u3001(Colab)\u62bd\u8c61\u6587\u672c\u6458\u8981\u5b9e\u73b0\u96c6\u9526(\u6559\u7a0b \u3001\u8bcd\u8bed\u62fc\u97f3\u6570\u636e\u3001\u9ad8\u6548\u6a21\u7cca\u641c\u7d22\u5de5\u5177\u3001NLP\u6570\u636e\u589e\u5e7f\u8d44\u6e90\u96c6\u3001\u5fae\u8f6f\u5bf9\u8bdd\u673a\u5668\u4eba\u6846\u67b6 \u3001 GitHub Typo Corpus\uff1a\u5927\u89c4\u6a21GitHub\u591a\u8bed\u8a00\u62fc\u5199\u9519\u8bef/\u8bed\u6cd5\u9519\u8bef\u6570\u636e\u96c6\u3001TextCluster\uff1a\u77ed\u6587\u672c\u805a\u7c7b\u9884\u5904\u7406\u6a21\u5757 Short text cluster\u3001\u9762\u5411\u8bed\u97f3\u8bc6\u522b\u7684\u4e2d\u6587\u6587\u672c\u89c4\u8303\u5316\u3001BLINK\uff1a\u6700\u5148\u8fdb\u7684\u5b9e\u4f53\u94fe\u63a5\u5e93\u3001BertPunc\uff1a\u57fa\u4e8eBERT\u7684\u6700\u5148\u8fdb\u6807\u70b9\u4fee\u590d\u6a21\u578b\u3001Tokenizer\uff1a\u5feb\u901f\u3001\u53ef\u5b9a\u5236\u7684\u6587\u672c\u8bcd\u6761\u5316\u5e93\u3001\u4e2d\u6587\u8bed\u8a00\u7406\u89e3\u6d4b\u8bc4\u57fa\u51c6\uff0c\u5305\u62ec\u4ee3\u8868\u6027\u7684\u6570\u636e\u96c6\u3001\u57fa\u51c6(\u9884\u8bad\u7ec3)\u6a21\u578b\u3001\u8bed\u6599\u5e93\u3001\u6392\u884c\u699c\u3001spaCy \u533b\u5b66\u6587\u672c\u6316\u6398\u4e0e\u4fe1\u606f\u63d0\u53d6 \u3001 NLP\u4efb\u52a1\u793a\u4f8b\u9879\u76ee\u4ee3\u7801\u96c6\u3001 python\u62fc\u5199\u68c0\u67e5\u5e93\u3001chatbot-list - \u884c\u4e1a\u5185\u5173\u4e8e\u667a\u80fd\u5ba2\u670d\u3001\u804a\u5929\u673a\u5668\u4eba\u7684\u5e94\u7528\u548c\u67b6\u6784\u3001\u7b97\u6cd5\u5206\u4eab\u548c\u4ecb\u7ecd\u3001\u8bed\u97f3\u8d28\u91cf\u8bc4\u4ef7\u6307\u6807(MOSNet, BSSEval, STOI, PESQ, SRMR)\u3001 \u7528138GB\u8bed\u6599\u8bad\u7ec3\u7684\u6cd5\u6587RoBERTa\u9884\u8bad\u7ec3\u8bed\u8a00\u6a21\u578b \u3001BERT-NER-Pytorch\uff1a\u4e09\u79cd\u4e0d\u540c\u6a21\u5f0f\u7684BERT\u4e2d\u6587NER\u5b9e\u9a8c\u3001\u65e0\u9053\u8bcd\u5178 - \u6709\u9053\u8bcd\u5178\u7684\u547d\u4ee4\u884c\u7248\u672c\uff0c\u652f\u6301\u82f1\u6c49\u4e92\u67e5\u548c\u5728\u7ebf\u67e5\u8be2\u30012019\u5e74NLP\u4eae\u70b9\u56de\u987e\u3001 Chinese medical dialogue data \u4e2d\u6587\u533b\u7597\u5bf9\u8bdd\u6570\u636e\u96c6 \u3001\u6700\u597d\u7684\u6c49\u5b57\u6570\u5b57(\u4e2d\u6587\u6570\u5b57)-\u963f\u62c9\u4f2f\u6570\u5b57\u8f6c\u6362\u5de5\u5177\u3001 \u57fa\u4e8e\u767e\u79d1\u77e5\u8bc6\u5e93\u7684\u4e2d\u6587\u8bcd\u8bed\u591a\u8bcd\u4e49/\u4e49\u9879\u83b7\u53d6\u4e0e\u7279\u5b9a\u53e5\u5b50\u8bcd\u8bed\u8bed\u4e49\u6d88\u6b67\u3001awesome-nlp-sentiment-analysis - \u60c5\u611f\u5206\u6790\u3001\u60c5\u7eea\u539f\u56e0\u8bc6\u522b\u3001\u8bc4\u4ef7\u5bf9\u8c61\u548c\u8bc4\u4ef7\u8bcd\u62bd\u53d6\u3001LineFlow\uff1a\u9762\u5411\u6240\u6709\u6df1\u5ea6\u5b66\u4e60\u6846\u67b6\u7684NLP\u6570\u636e\u9ad8\u6548\u52a0\u8f7d\u5668\u3001\u4e2d\u6587\u533b\u5b66NLP\u516c\u5f00\u8d44\u6e90\u6574\u7406 \u3001MedQuAD\uff1a(\u82f1\u6587)\u533b\u5b66\u95ee\u7b54\u6570\u636e\u96c6\u3001\u5c06\u81ea\u7136\u8bed\u8a00\u6570\u5b57\u4e32\u89e3\u6790\u8f6c\u6362\u4e3a\u6574\u6570\u548c\u6d6e\u70b9\u6570\u3001Transfer Learning in Natural Language Processing (NLP) \u3001\u9762\u5411\u8bed\u97f3\u8bc6\u522b\u7684\u4e2d\u6587/\u82f1\u6587\u53d1\u97f3\u8f9e\u5178\u3001Tokenizers\uff1a\u6ce8\u91cd\u6027\u80fd\u4e0e\u591a\u529f\u80fd\u6027\u7684\u6700\u5148\u8fdb\u5206\u8bcd\u5668\u3001CLUENER \u7ec6\u7c92\u5ea6\u547d\u540d\u5b9e\u4f53\u8bc6\u522b Fine Grained Named Entity Recognition\u3001 \u57fa\u4e8eBERT\u7684\u4e2d\u6587\u547d\u540d\u5b9e\u4f53\u8bc6\u522b\u3001\u4e2d\u6587\u8c23\u8a00\u6570\u636e\u5e93\u3001NLP\u6570\u636e\u96c6/\u57fa\u51c6\u4efb\u52a1\u5927\u5217\u8868\u3001nlp\u76f8\u5173\u7684\u4e00\u4e9b\u8bba\u6587\u53ca\u4ee3\u7801, \u5305\u62ec\u4e3b\u9898\u6a21\u578b\u3001\u8bcd\u5411\u91cf(Word Embedding)\u3001\u547d\u540d\u5b9e\u4f53\u8bc6\u522b(NER)\u3001\u6587\u672c\u5206\u7c7b(Text Classificatin)\u3001\u6587\u672c\u751f\u6210(Text Generation)\u3001\u6587\u672c\u76f8\u4f3c\u6027(Text Similarity)\u8ba1\u7b97\u7b49\uff0c\u6d89\u53ca\u5230\u5404\u79cd\u4e0enlp\u76f8\u5173\u7684\u7b97\u6cd5\uff0c\u57fa\u4e8ekeras\u548ctensorflow \u3001Python\u6587\u672c\u6316\u6398/NLP\u5b9e\u6218\u793a\u4f8b\u3001 Blackstone\uff1a\u9762\u5411\u975e\u7ed3\u6784\u5316\u6cd5\u5f8b\u6587\u672c\u7684spaCy pipeline\u548cNLP\u6a21\u578b\u901a\u8fc7\u540c\u4e49\u8bcd\u66ff\u6362\u5b9e\u73b0\u6587\u672c\u201c\u53d8\u8138\u201d \u3001\u4e2d\u6587 \u9884\u8bad\u7ec3 ELECTREA \u6a21\u578b: \u57fa\u4e8e\u5bf9\u6297\u5b66\u4e60 pretrain Chinese Model \u3001albert-chinese-ner - \u7528\u9884\u8bad\u7ec3\u8bed\u8a00\u6a21\u578bALBERT\u505a\u4e2d\u6587NER \u3001\u57fa\u4e8eGPT2\u7684\u7279\u5b9a\u4e3b\u9898\u6587\u672c\u751f\u6210/\u6587\u672c\u589e\u5e7f\u3001\u5f00\u6e90\u9884\u8bad\u7ec3\u8bed\u8a00\u6a21\u578b\u5408\u96c6\u3001\u591a\u8bed\u8a00\u53e5\u5411\u91cf\u5305\u3001\u7f16\u7801\u3001\u6807\u8bb0\u548c\u5b9e\u73b0\uff1a\u4e00\u79cd\u53ef\u63a7\u9ad8\u6548\u7684\u6587\u672c\u751f\u6210\u65b9\u6cd5\u3001 \u82f1\u6587\u810f\u8bdd\u5927\u5217\u8868 \u3001attnvis\uff1aGPT2\u3001BERT\u7b49transformer\u8bed\u8a00\u6a21\u578b\u6ce8\u610f\u529b\u4ea4\u4e92\u53ef\u89c6\u5316\u3001CoVoST\uff1aFacebook\u53d1\u5e03\u7684\u591a\u8bed\u79cd\u8bed\u97f3-\u6587\u672c\u7ffb\u8bd1\u8bed\u6599\u5e93\uff0c\u5305\u62ec11\u79cd\u8bed\u8a00(\u6cd5\u8bed\u3001\u5fb7\u8bed\u3001\u8377\u5170\u8bed\u3001\u4fc4\u8bed\u3001\u897f\u73ed\u7259\u8bed\u3001\u610f\u5927\u5229\u8bed\u3001\u571f\u8033\u5176\u8bed\u3001\u6ce2\u65af\u8bed\u3001\u745e\u5178\u8bed\u3001\u8499\u53e4\u8bed\u548c\u4e2d\u6587)\u7684\u8bed\u97f3\u3001\u6587\u5b57\u8f6c\u5f55\u53ca\u82f1\u6587\u8bd1\u6587\u3001Jiagu\u81ea\u7136\u8bed\u8a00\u5904\u7406\u5de5\u5177 - \u4ee5BiLSTM\u7b49\u6a21\u578b\u4e3a\u57fa\u7840\uff0c\u63d0\u4f9b\u77e5\u8bc6\u56fe\u8c31\u5173\u7cfb\u62bd\u53d6 \u4e2d\u6587\u5206\u8bcd \u8bcd\u6027\u6807\u6ce8 \u547d\u540d\u5b9e\u4f53\u8bc6\u522b \u60c5\u611f\u5206\u6790 \u65b0\u8bcd\u53d1\u73b0 \u5173\u952e\u8bcd \u6587\u672c\u6458\u8981 \u6587\u672c\u805a\u7c7b\u7b49\u529f\u80fd\u3001\u7528unet\u5b9e\u73b0\u5bf9\u6587\u6863\u8868\u683c\u7684\u81ea\u52a8\u68c0\u6d4b\uff0c\u8868\u683c\u91cd\u5efa\u3001NLP\u4e8b\u4ef6\u63d0\u53d6\u6587\u732e\u8d44\u6e90\u5217\u8868 \u3001 \u91d1\u878d\u9886\u57df\u81ea\u7136\u8bed\u8a00\u5904\u7406\u7814\u7a76\u8d44\u6e90\u5927\u5217\u8868\u3001CLUEDatasetSearch - \u4e2d\u82f1\u6587NLP\u6570\u636e\u96c6\uff1a\u641c\u7d22\u6240\u6709\u4e2d\u6587NLP\u6570\u636e\u96c6\uff0c\u9644\u5e38\u7528\u82f1\u6587NLP\u6570\u636e\u96c6 \u3001medical_NER - \u4e2d\u6587\u533b\u5b66\u77e5\u8bc6\u56fe\u8c31\u547d\u540d\u5b9e\u4f53\u8bc6\u522b \u3001(\u54c8\u4f5b)\u8bb2\u56e0\u679c\u63a8\u7406\u7684\u514d\u8d39\u4e66\u3001\u77e5\u8bc6\u56fe\u8c31\u76f8\u5173\u5b66\u4e60\u8d44\u6599/\u6570\u636e\u96c6/\u5de5\u5177\u8d44\u6e90\u5927\u5217\u8868\u3001Forte\uff1a\u7075\u6d3b\u5f3a\u5927\u7684\u81ea\u7136\u8bed\u8a00\u5904\u7406pipeline\u5de5\u5177\u96c6 \u3001Python\u5b57\u7b26\u4e32\u76f8\u4f3c\u6027\u7b97\u6cd5\u5e93\u3001PyLaia\uff1a\u9762\u5411\u624b\u5199\u6587\u6863\u5206\u6790\u7684\u6df1\u5ea6\u5b66\u4e60\u5de5\u5177\u5305\u3001TextFooler\uff1a\u9488\u5bf9\u6587\u672c\u5206\u7c7b/\u63a8\u7406\u7684\u5bf9\u6297\u6587\u672c\u751f\u6210\u6a21\u5757\u3001Haystack\uff1a\u7075\u6d3b\u3001\u5f3a\u5927\u7684\u53ef\u6269\u5c55\u95ee\u7b54(QA)\u6846\u67b6\u3001\u4e2d\u6587\u5173\u952e\u77ed\u8bed\u62bd\u53d6\u5de5\u5177",
+    "created_at": "2018-08-21T11:20:39Z",
+    "updated_at": "2026-03-07T02:30:01Z"
+  },
+  {
+    "name": "anuraghazra/github-readme-stats",
+    "url": "https://github.com/anuraghazra/github-readme-stats.git",
+    "stars": 78638,
+    "forks": 31348,
+    "language": "JavaScript",
+    "description": ":zap: Dynamically generated stats for your github readmes",
+    "created_at": "2020-07-09T10:34:22Z",
+    "updated_at": "2026-03-07T03:13:29Z"
+  },
+  {
+    "name": "tensorflow/models",
+    "url": "https://github.com/tensorflow/models.git",
+    "stars": 77690,
+    "forks": 45253,
+    "language": "Python",
+    "description": "Models and examples built with TensorFlow",
+    "created_at": "2016-02-05T01:15:20Z",
+    "updated_at": "2026-03-06T21:40:43Z"
+  },
+  {
+    "name": "FortAwesome/Font-Awesome",
+    "url": "https://github.com/FortAwesome/Font-Awesome.git",
+    "stars": 76397,
+    "forks": 12243,
+    "language": "JavaScript",
+    "description": "The iconic SVG, font, and CSS toolkit",
+    "created_at": "2012-02-17T14:19:43Z",
+    "updated_at": "2026-03-06T23:06:04Z"
+  },
+  {
+    "name": "d2l-ai/d2l-zh",
+    "url": "https://github.com/d2l-ai/d2l-zh.git",
+    "stars": 76014,
+    "forks": 12137,
+    "language": "Python",
+    "description": "\u300a\u52a8\u624b\u5b66\u6df1\u5ea6\u5b66\u4e60\u300b\uff1a\u9762\u5411\u4e2d\u6587\u8bfb\u8005\u3001\u80fd\u8fd0\u884c\u3001\u53ef\u8ba8\u8bba\u3002\u4e2d\u82f1\u6587\u7248\u88ab70\u591a\u4e2a\u56fd\u5bb6\u7684500\u591a\u6240\u5927\u5b66\u7528\u4e8e\u6559\u5b66\u3002",
+    "created_at": "2017-08-23T04:40:24Z",
+    "updated_at": "2026-03-07T03:12:32Z"
+  },
+  {
+    "name": "swisskyrepo/PayloadsAllTheThings",
+    "url": "https://github.com/swisskyrepo/PayloadsAllTheThings.git",
+    "stars": 75786,
+    "forks": 16714,
+    "language": "Python",
+    "description": "A list of useful payloads and bypass for Web Application Security and Pentest/CTF",
+    "created_at": "2016-10-18T07:29:07Z",
+    "updated_at": "2026-03-07T03:09:14Z"
+  }
+]

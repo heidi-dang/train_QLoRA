@@ -4,7 +4,7 @@ import json
 import logging
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-AI_LAB = os.path.join(ROOT, 'ai-lab')
+AI_LAB = os.path.join(ROOT, 'data', 'ai-lab')
 
 logging.basicConfig(level=logging.INFO)
 
@@ -34,7 +34,7 @@ def check_gpu():
 
 
 def check_training_loop_alive():
-    pidf = os.path.join(AI_LAB, 'train_loop.pid')
+    pidf = os.path.join(ROOT, 'state', 'pids', 'train_loop.pid')
     return os.path.exists(pidf)
 
 

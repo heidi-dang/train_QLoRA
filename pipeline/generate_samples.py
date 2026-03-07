@@ -11,10 +11,14 @@ import time
 from pathlib import Path
 import hashlib
 import random
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from pipeline import grok_client
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-AI_LAB = os.path.join(ROOT, 'ai-lab')
+AI_LAB = os.path.join(ROOT, 'data', 'ai-lab')
 FILELIST = os.path.join(AI_LAB, 'datasets', 'repos_filelist.txt')
 RAW_DIR = os.path.join(AI_LAB, 'datasets', 'raw')
 

@@ -10,7 +10,7 @@ import logging
 from urllib.parse import urlparse
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-AI_LAB = os.path.join(ROOT, 'ai-lab')
+AI_LAB = os.path.join(ROOT, 'data', 'ai-lab')
 REPOS_DIR = os.path.join(AI_LAB, 'repos')
 REPO_LIST = os.path.join(AI_LAB, 'datasets', 'repos_premium.txt')
 FILELIST_OUT = os.path.join(AI_LAB, 'datasets', 'repos_filelist.txt')

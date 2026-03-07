@@ -13,3 +13,8 @@ mlflow
 requests
 openai
 wandb
+tensorboard
+PyGithub
+python-dotenv
+rich
+setuptools

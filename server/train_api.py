@@ -8,8 +8,8 @@ import logging
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 TRAINER = os.path.join(ROOT, 'pipeline', 'train_loop.py')
-PID_FILE = os.path.join(ROOT, 'ai-lab', 'train_loop.pid')
-STOP_FILE = os.path.join(ROOT, 'ai-lab', 'STOP')
+PID_FILE = os.path.join(ROOT, 'state', 'pids', 'train_loop.pid')
+STOP_FILE = os.path.join(ROOT, 'data', 'ai-lab', 'STOP')
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
@@ -57,7 +57,7 @@ def api_status():
 @app.get('/train/metrics')
 def api_metrics():
     # read latest evaluation file if exists
-    eval_dir = os.path.join(ROOT, 'ai-lab', 'evaluation')
+    eval_dir = os.path.join(ROOT, 'data', 'ai-lab', 'evaluation')
     if not os.path.exists(eval_dir):
         return {'metrics': {}}
     files = sorted([f for f in os.listdir(eval_dir) if f.startswith('results_round_')])

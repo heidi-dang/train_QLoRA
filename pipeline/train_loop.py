@@ -17,7 +17,7 @@ except Exception:
     MlflowClient = None
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-AI_LAB = os.path.join(ROOT, 'ai-lab')
+AI_LAB = os.path.join(ROOT, 'data', 'ai-lab')
 STOP_FILE = os.path.join(AI_LAB, 'STOP')
 CHECKPOINTS = os.path.join(AI_LAB, 'checkpoints')
 MLFLOW_EXPERIMENT = 'continuous_training'
