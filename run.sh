@@ -79,11 +79,9 @@ case $CMD in
     $VENV_PYTHON github_search.py
     ;;
   up)
-    # Check if configuration exists
-    if [ ! -f "$CONFIG" ]; then
-      echo "No configuration found. Running setup first..."
-      $VENV_PYTHON setup_config.py
-    fi
+    # Always run setup to ensure proper configuration
+    echo "🔧 Running configuration setup..."
+    $VENV_PYTHON setup_config.py
     
     # Stop any existing services first
     echo "🛑 Stopping any existing services..."

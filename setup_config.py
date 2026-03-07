@@ -114,14 +114,10 @@ def setup_environment(config):
 
 def main():
     """Main setup function."""
-    # Check if config exists
-    existing_config = load_config()
-    if existing_config:
-        print(f"Found existing configuration in {CONFIG_FILE}")
-        overwrite = input("Overwrite existing config? [y/N]: ").strip().lower() == 'y'
-        if not overwrite:
-            setup_environment(existing_config)
-            return
+    # Always get new configuration to ensure API keys are set
+    print("🔧 QLoRA Training Pipeline Configuration")
+    print("This will configure your API keys and settings.")
+    print()
     
     # Get new configuration
     config = get_user_input()
