@@ -36,6 +36,13 @@ require_venv() {
 }
 
 prompt_topic() {
+  # Prefer .env value; fall back to interactive prompt
+  topic="${PARALLEL_TOPIC:-}"
+  if [ -n "$topic" ]; then
+    echo "$topic"
+    return
+  fi
+
   echo "Select what data you want to generate:" >&2
   echo "  1) devops" >&2
   echo "  2) github_workflows" >&2
@@ -52,9 +59,15 @@ prompt_topic() {
     4) echo "hacking" ;;
     5) echo "whitehat_blackhat" ;;
     6)
-      read -r -p "Enter custom topic (free text): " custom
-      custom="${custom// /_}"
-      echo "${custom:-custom}" ;;
+      # Prefer .env custom query if set
+      custom="${PARALLEL_CUSTOM_QUERY:-}"
+      if [ -z "$custom" ]; then
+        read -r -p "Enter custom topic (free text): " custom
+        custom="${custom// /_}"
+        echo "${custom:-custom}"
+      else
+        echo "$custom"
+      fi ;;
     *)
       echo "devops" ;;
   esac
@@ -72,12 +85,24 @@ topic_to_query() {
 }
 
 prompt_languages() {
+  # Prefer .env value; fall back to interactive prompt
+  langs="${PARALLEL_LANGUAGES:-}"
+  if [ -n "$langs" ]; then
+    echo "$langs"
+    return
+  fi
   read -r -p "Programming languages to search on GitHub (comma-separated) [python,javascript]: " langs
   langs="${langs:-python,javascript}"
   echo "$langs"
 }
 
 prompt_run_name() {
+  # Prefer .env value; fall back to interactive prompt
+  name="${PARALLEL_RUN_NAME:-}"
+  if [ -n "$name" ]; then
+    echo "$name"
+    return
+  fi
   read -r -p "Name for output directory (will be created under data/ai-lab/datasets/parallel_runs/) [parallel_run_$(date +%Y%m%d_%H%M%S)]: " name
   name="${name:-parallel_run_$(date +%Y%m%d_%H%M%S)}"
   name="${name// /_}"
