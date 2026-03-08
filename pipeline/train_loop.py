@@ -10,6 +10,7 @@ import subprocess
 import sys
 import json
 from pathlib import Path
+from typing import Optional
 try:
     import mlflow
     from mlflow.tracking import MlflowClient
@@ -21,6 +22,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 AI_LAB = os.path.join(ROOT, 'data', 'ai-lab')
 STOP_FILE = os.path.join(AI_LAB, 'STOP')
 CHECKPOINTS = os.path.join(AI_LAB, 'checkpoints')
+DATASETS_CLEAN = os.path.join(AI_LAB, 'datasets', 'clean')
+TRAIN_FILE = os.path.join(DATASETS_CLEAN, 'train.json')
 MLFLOW_EXPERIMENT = 'continuous_training'
 
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +42,37 @@ def stage_generate():
 def stage_clean():
     logging.info('Stage: clean dataset')
     subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'clean_dataset.py')])
+
+
+def _safe_int_env(name: str, default: int) -> int:
+    try:
+        v = str(os.environ.get(name, '')).strip()
+        return int(v) if v else default
+    except Exception:
+        return default
+
+
+def _safe_bool_env(name: str, default: bool) -> bool:
+    v = str(os.environ.get(name, '')).strip().lower()
+    if not v:
+        return default
+    if v in {'1', 'true', 'yes', 'y', 'on'}:
+        return True
+    if v in {'0', 'false', 'no', 'n', 'off'}:
+        return False
+    return default
+
+
+def get_clean_sample_count(train_file: str = TRAIN_FILE) -> int:
+    """Count available cleaned samples. Returns 0 if missing/unreadable."""
+    try:
+        if not os.path.exists(train_file):
+            return 0
+        with open(train_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return int(len(data)) if isinstance(data, list) else 0
+    except Exception:
+        return 0
 
 
 def stage_train(round_n: int):
@@ -72,13 +106,39 @@ def main_loop():
                 logging.info('STOP file exists - exiting loop')
                 break
             round_n += 1
-            stages = [
-                ("scrape", stage_scrape),
-                ("generate", stage_generate),
-                ("clean", stage_clean),
-                ("train", lambda: stage_train(round_n)),
-                ("evaluate", lambda: stage_evaluate(round_n))
-            ]
+
+            # Auto-orchestrator: if enough clean data exists, train first to save time,
+            # then go back to generation/cleaning to replenish the buffer.
+            auto_train_first = _safe_bool_env('AUTO_TRAIN_FIRST', True)
+            min_samples_to_train = _safe_int_env('MIN_SAMPLES_TO_TRAIN', 200)
+            target_buffer_samples = _safe_int_env('TARGET_BUFFER_SAMPLES', 500)
+            clean_count = get_clean_sample_count(TRAIN_FILE)
+
+            stages = []
+            if auto_train_first and clean_count >= min_samples_to_train:
+                stages.extend([
+                    ("train", lambda: stage_train(round_n)),
+                    ("evaluate", lambda: stage_evaluate(round_n)),
+                ])
+
+                # After training, top up data for the next round if below buffer target.
+                # This is best-effort: scrape/generate/clean can still be slow depending on repos.
+                if get_clean_sample_count(TRAIN_FILE) < target_buffer_samples:
+                    stages.extend([
+                        ("scrape", stage_scrape),
+                        ("generate", stage_generate),
+                        ("clean", stage_clean),
+                    ])
+            else:
+                # Default behavior: generate/clean then train/evaluate.
+                stages.extend([
+                    ("scrape", stage_scrape),
+                    ("generate", stage_generate),
+                    ("clean", stage_clean),
+                    ("train", lambda: stage_train(round_n)),
+                    ("evaluate", lambda: stage_evaluate(round_n)),
+                ])
+
             for i, (name, func) in enumerate(stages, 1):
                 pct = (i / len(stages)) * 100
                 bar_len = 20
