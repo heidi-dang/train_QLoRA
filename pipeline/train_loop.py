@@ -92,6 +92,24 @@ def stage_train(round_n: int):
     # In production: invoke training script that uses bitsandbytes + PEFT + transformers
     ckpt_dir = os.path.join(CHECKPOINTS, f'adapter_round_{round_n}')
     os.makedirs(ckpt_dir, exist_ok=True)
+
+    # Copy latest checkpoint from previous round so TRL can resume
+    prev_ckpt_dir = os.path.join(CHECKPOINTS, f'adapter_round_{round_n-1}')
+    prev_checkpoint_pattern = os.path.join(prev_ckpt_dir, 'checkpoint-*')
+    import glob
+    prev_checkpoints = sorted(glob.glob(prev_checkpoint_pattern))
+    if prev_checkpoints:
+        latest_prev = prev_checkpoints[-1]
+        import shutil
+        for file in os.listdir(latest_prev):
+            src = os.path.join(latest_prev, file)
+            dst = os.path.join(ckpt_dir, file)
+            if os.path.isfile(src):
+                shutil.copy2(src, dst)
+        logging.info(f'Copied checkpoint from {latest_prev} to {ckpt_dir}')
+    else:
+        logging.info('No previous checkpoint found; starting from scratch')
+
     # call training scaffold (train_q_lora) which will use real training if deps present
     train_script = os.path.join(ROOT, 'pipeline', 'train_q_lora.py')
     try:
