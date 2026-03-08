@@ -11,6 +11,10 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 import inspect
 
+# Constants
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+AI_LAB = os.path.join(ROOT, 'data', 'ai-lab')
+
 # ML dependencies
 try:
     from transformers import (
@@ -193,7 +197,7 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
         lr_scheduler_type="cosine",
         warmup_ratio=0.03,
         report_to=["tensorboard", "mlflow"] if config.get('enable_mlflow') else "tensorboard",
-        logging_dir=os.path.join(os.path.dirname(output_dir), 'logs'),
+        logging_dir=os.path.join(AI_LAB, 'logs'),
         remove_unused_columns=False,
         resume_from_checkpoint=True,
     )
