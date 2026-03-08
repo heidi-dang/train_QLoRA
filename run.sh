@@ -11,20 +11,23 @@ CONFIG="$ROOT/config.json"
 mkdir -p "$STATE" "$LOGS" "$PIDS" "$DATA/datasets/clean" "$DATA/checkpoints" "$DATA/evaluation"
 
 VENV="$ROOT/venv"
-mkdir -p "$VENV"
+
+VENV_ACTIVATE="$VENV/bin/activate"
+VENV_PYTHON="$VENV/bin/python"
 
 # Always ensure virtual environment is properly set up
 echo "🔧 Setting up Python environment..."
 
-# Create virtual environment if it doesn't exist
-if [ ! -d "$VENV" ]; then
+# Create virtual environment if it doesn't exist (or is incomplete)
+if [ ! -f "$VENV_ACTIVATE" ] || [ ! -f "$VENV_PYTHON" ]; then
   echo "Creating virtual environment..."
+  rm -rf "$VENV" 2>/dev/null || true
   python3 -m venv "$VENV"
 fi
 
 # Always activate and install dependencies
 echo "Activating virtual environment and installing dependencies..."
-source "$VENV/bin/activate"
+source "$VENV_ACTIVATE"
 pip install --upgrade pip
 pip install -r requirements.txt
 
@@ -35,22 +38,12 @@ if [ -f "$ROOT/.env" ]; then
   export $(cat "$ROOT/.env" | xargs)
 fi
 
-VENV_PYTHON="$VENV/bin/python"
 VENV_UVICORN="$VENV/bin/uvicorn"
 VENV_DASHBOARD="$VENV/bin/python"
 
-# Verify virtual environment exists and dependencies are installed
-if [ ! -f "$VENV_PYTHON" ]; then
-  echo "Virtual environment not found. Creating..."
-  python3 -m venv "$VENV"
-  source "$VENV/bin/activate"
-  pip install --upgrade pip
-  pip install -r requirements.txt
-fi
-
 # Always activate environment for all commands
 echo "🚀 Activating Python virtual environment..."
-source "$VENV/bin/activate"
+source "$VENV_ACTIVATE"
 
 CMD=${1:-help}
 
