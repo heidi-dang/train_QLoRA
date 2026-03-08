@@ -79,7 +79,14 @@ case $CMD in
     pkill -9 -f "train_api:app" 2>/dev/null || true
     pkill -9 -f "mlflow server" 2>/dev/null || true
     pkill -9 -f "tensorboard" 2>/dev/null || true
+    
+    # Kill ALL dashboard processes (comprehensive patterns)
+    echo "🗑️ Force-killing all dashboard processes..."
     pkill -9 -f "dashboard.app" 2>/dev/null || true
+    pkill -9 -f "python.*dashboard" 2>/dev/null || true
+    pkill -9 -f "python.*app.*main" 2>/dev/null || true
+    pkill -9 -f "from dashboard.app import main" 2>/dev/null || true
+    pkill -9 -f "dashboard.*main" 2>/dev/null || true
     pkill -9 -f "$VENV/bin/python" 2>/dev/null || true
     
     # Remove STOP file after cleanup
@@ -123,7 +130,14 @@ case $CMD in
     pkill -9 -f "train_api:app" 2>/dev/null || true
     pkill -9 -f "mlflow server" 2>/dev/null || true
     pkill -9 -f "tensorboard" 2>/dev/null || true
+    
+    # Kill ALL dashboard processes (comprehensive patterns)
+    echo "🗑️ Force-killing all dashboard processes..."
     pkill -9 -f "dashboard.app" 2>/dev/null || true
+    pkill -9 -f "python.*dashboard" 2>/dev/null || true
+    pkill -9 -f "python.*app.*main" 2>/dev/null || true
+    pkill -9 -f "from dashboard.app import main" 2>/dev/null || true
+    pkill -9 -f "dashboard.*main" 2>/dev/null || true
     pkill -9 -f "$VENV/bin/python" 2>/dev/null || true
     
     # Remove STOP file after cleanup
@@ -213,7 +227,14 @@ case $CMD in
     pkill -9 -f "train_api:app" 2>/dev/null || true
     pkill -9 -f "mlflow server" 2>/dev/null || true
     pkill -9 -f "tensorboard" 2>/dev/null || true
+    
+    # Kill ALL dashboard processes (comprehensive patterns)
+    echo "🗑️ Force-killing all dashboard processes..."
     pkill -9 -f "dashboard.app" 2>/dev/null || true
+    pkill -9 -f "python.*dashboard" 2>/dev/null || true
+    pkill -9 -f "python.*app.*main" 2>/dev/null || true
+    pkill -9 -f "from dashboard.app import main" 2>/dev/null || true
+    pkill -9 -f "dashboard.*main" 2>/dev/null || true
     
     # Additional cleanup for any remaining python processes from our venv
     echo "🧹 Cleaning up any remaining venv processes..."
