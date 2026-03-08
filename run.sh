@@ -71,12 +71,16 @@ case $CMD in
       fi
     done
     
-    # Kill any remaining processes
-    pkill -f "train_api:app" 2>/dev/null || true
-    pkill -f "train_loop.py" 2>/dev/null || true
-    pkill -f "mlflow server" 2>/dev/null || true
-    pkill -f "tensorboard" 2>/dev/null || true
-    pkill -f "dashboard.app" 2>/dev/null || true
+    # Kill ALL remaining processes (force kill to be sure)
+    echo "🔥 Force-killing all remaining processes..."
+    pkill -9 -f "train_q_lora.py" 2>/dev/null || true
+    pkill -9 -f "train_loop.py" 2>/dev/null || true
+    pkill -9 -f "generate_samples.py" 2>/dev/null || true
+    pkill -9 -f "train_api:app" 2>/dev/null || true
+    pkill -9 -f "mlflow server" 2>/dev/null || true
+    pkill -9 -f "tensorboard" 2>/dev/null || true
+    pkill -9 -f "dashboard.app" 2>/dev/null || true
+    pkill -9 -f "$VENV/bin/python" 2>/dev/null || true
     
     # Remove STOP file after cleanup
     rm -f "$STATE/STOP" 2>/dev/null || true
@@ -111,12 +115,16 @@ case $CMD in
       fi
     done
     
-    # Kill any remaining processes
-    pkill -f "train_api:app" 2>/dev/null || true
-    pkill -f "train_loop.py" 2>/dev/null || true
-    pkill -f "mlflow server" 2>/dev/null || true
-    pkill -f "tensorboard" 2>/dev/null || true
-    pkill -f "dashboard.app" 2>/dev/null || true
+    # Kill ALL remaining processes (force kill to be sure)
+    echo "🔥 Force-killing all remaining processes..."
+    pkill -9 -f "train_q_lora.py" 2>/dev/null || true
+    pkill -9 -f "train_loop.py" 2>/dev/null || true
+    pkill -9 -f "generate_samples.py" 2>/dev/null || true
+    pkill -9 -f "train_api:app" 2>/dev/null || true
+    pkill -9 -f "mlflow server" 2>/dev/null || true
+    pkill -9 -f "tensorboard" 2>/dev/null || true
+    pkill -9 -f "dashboard.app" 2>/dev/null || true
+    pkill -9 -f "$VENV/bin/python" 2>/dev/null || true
     
     # Remove STOP file after cleanup
     rm -f "$STATE/STOP" 2>/dev/null || true
@@ -180,16 +188,41 @@ case $CMD in
     echo "📝 Logs: tail -f $LOGS/*"
     ;;
   stop)
+    echo "🛑 Stopping all services..."
     touch "$STATE/STOP"
+    
+    # Kill processes with PID files first
     for pidfile in "$PIDS"/*.pid; do
       if [ -f "$pidfile" ]; then
         pid=$(cat "$pidfile")
         if kill -0 "$pid" 2>/dev/null; then
-          kill "$pid"
+          echo "Stopping PID $pid from $(basename $pidfile .pid)"
+          kill "$pid" 2>/dev/null || true
+          sleep 1
+          kill -9 "$pid" 2>/dev/null || true
         fi
         rm -f "$pidfile"
       fi
     done
+    
+    # Kill ALL training and related processes (force kill to be sure)
+    echo "🔥 Force-killing all training processes..."
+    pkill -9 -f "train_q_lora.py" 2>/dev/null || true
+    pkill -9 -f "train_loop.py" 2>/dev/null || true
+    pkill -9 -f "generate_samples.py" 2>/dev/null || true
+    pkill -9 -f "train_api:app" 2>/dev/null || true
+    pkill -9 -f "mlflow server" 2>/dev/null || true
+    pkill -9 -f "tensorboard" 2>/dev/null || true
+    pkill -9 -f "dashboard.app" 2>/dev/null || true
+    
+    # Additional cleanup for any remaining python processes from our venv
+    echo "🧹 Cleaning up any remaining venv processes..."
+    pkill -9 -f "$VENV/bin/python" 2>/dev/null || true
+    
+    # Wait a moment for processes to die
+    sleep 2
+    
+    echo "✅ All processes killed successfully!"
     ;;
   status)
     for pidfile in "$PIDS"/*.pid; do
