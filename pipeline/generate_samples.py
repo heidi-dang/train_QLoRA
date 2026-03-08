@@ -25,12 +25,79 @@ RAW_DIR = os.path.join(AI_LAB, 'datasets', 'raw')
 
 logging.basicConfig(level=logging.INFO)
 
+PREMIUM_SYSTEM_INSTRUCTIONS = (
+    "You are a meticulous senior engineer and technical writer. "
+    "You must be correct, concrete, and testable. "
+    "Prefer runnable code and clearly separated sections. "
+    "Do not invent missing APIs; if assumptions are needed, state them explicitly."
+)
+
+PREMIUM_OUTPUT_CONTRACT = (
+    "Return your answer in the following format exactly:\n"
+    "<ANSWER>\n"
+    "...your content...\n"
+    "</ANSWER>\n"
+    "Do not include anything outside <ANSWER> tags."
+)
+
 PROMPT_TEMPLATES = [
-    ('explain', 'Explain the following code in detail and describe what each function does'),
-    ('tests', 'Write unit tests that validate the behavior of the following code'),
-    ('refactor', 'Refactor the following code to improve readability and maintainability'),
-    ('optimize', 'Suggest optimizations for the following code and provide the improved code'),
-    ('bugfind', 'Find potential bugs or edge cases in the following code and explain how to fix them'),
+    (
+        'explain_deep',
+        "Write a deep explanation of the code with a focus on invariants, data flow, and failure modes. "
+        "Include: (1) high-level summary, (2) line-by-line walkthrough of key functions, "
+        "(3) edge cases, (4) complexity/perf notes, (5) suggested improvements.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'tests_premium',
+        "Write high-quality unit tests for the code. Requirements: "
+        "(1) tests must be runnable, (2) cover normal + edge cases, "
+        "(3) include at least one property-based or parameterized test if applicable, "
+        "(4) mock network/filesystem/time where appropriate, (5) include clear assertions.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'code_review',
+        "Perform a professional code review. Include: "
+        "(1) correctness issues, (2) security issues, (3) performance issues, "
+        "(4) readability/maintainability issues, (5) suggested refactor plan, "
+        "(6) priority-ranked checklist of fixes.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'refactor_premium',
+        "Refactor the code for clarity and maintainability. Requirements: "
+        "(1) preserve behavior, (2) improve naming, structure, and cohesion, "
+        "(3) remove duplication, (4) add small helper functions, "
+        "(5) output the full refactored code.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'optimize_premium',
+        "Optimize the code. Include: "
+        "(1) a short list of bottlenecks, (2) improved implementation, "
+        "(3) complexity comparison, (4) any trade-offs.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'bug_hunt',
+        "Find subtle bugs and edge cases. Requirements: "
+        "(1) list at least 5 potential issues, (2) show minimal reproducer inputs if possible, "
+        "(3) provide concrete fixes.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'security_audit',
+        "Do a security audit of the code. Include: "
+        "(1) threat model assumptions, (2) vulnerabilities (injection, secrets, auth, unsafe deserialization, etc.), "
+        "(3) mitigation steps, (4) safe-by-default code changes if relevant.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'debugging_trace',
+        "Simulate a debugging session: "
+        "(1) identify likely failure points, (2) propose targeted logging, "
+        "(3) propose a minimal failing test, (4) provide a step-by-step fix plan.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
+    (
+        'architecture_notes',
+        "Write architecture notes: "
+        "(1) components, (2) responsibilities, (3) interfaces, (4) key invariants, "
+        "(5) suggested modularization.\n" + PREMIUM_OUTPUT_CONTRACT,
+    ),
 ]
 
 MAX_WORKERS = 3
@@ -94,10 +161,16 @@ def generate_for_file(path: str, out_dir: str, teacher_client=None):
     produced = 0
     
     for tag, template in PROMPT_TEMPLATES:
-        prompt = f"{template}:\n\n{Path(path).name}\n---\n{code}"
+        prompt = (
+            f"{PREMIUM_SYSTEM_INSTRUCTIONS}\n\n"
+            f"FILE: {Path(path).name}\n"
+            f"REPO: {repo}\n\n"
+            f"INSTRUCTION:\n{template}\n\n"
+            f"CODE:\n{code}"
+        )
         try:
             if teacher_client is not None:
-                resp = teacher_client.generate(template, text)
+                resp = teacher_client.generate(prompt, text)
             else:
                 resp = send_to_teacher(template, text)
         except Exception:
