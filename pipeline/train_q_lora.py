@@ -101,19 +101,27 @@ def load_model_and_tokenizer(model_name: str, hf_token: str = None):
             device_map="auto",
             trust_remote_code=True
         )
+        logging.info("4-bit quantized load successful")
     except TypeError as e:
         last_err = e
+        logging.warning(f"4-bit load failed due to TypeError: {e}")
     except Exception as e:
         last_err = e
+        logging.warning(f"4-bit load failed due to Exception: {e}")
 
     if model is None:
         logging.warning(f"4-bit load failed, falling back to non-quantized model load: {last_err}")
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            token=hf_token if hf_token else None,
-            device_map="auto",
-            trust_remote_code=True
-        )
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                token=hf_token if hf_token else None,
+                device_map="auto",
+                trust_remote_code=True
+            )
+            logging.info("Non-quantized model load successful")
+        except Exception as e:
+            logging.error(f"Failed to load model even without quantization: {e}")
+            raise e
     
     return model, tokenizer
 
@@ -196,7 +204,9 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
     trainer = None
     try:
         params = set(inspect.signature(SFTTrainer.__init__).parameters.keys())
-    except Exception:
+        logging.info(f"SFTTrainer accepts parameters: {params}")
+    except Exception as e:
+        logging.warning(f"Failed to inspect SFTTrainer: {e}")
         params = set()
 
     common_kwargs = {
@@ -209,18 +219,30 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
         "packing": False,
     }
 
-    if "tokenizer" in params:
-        common_kwargs["tokenizer"] = tokenizer
-    elif "processing_class" in params:
+    # Handle tokenizer/processing_class parameter compatibility
+    if "processing_class" in params:
         common_kwargs["processing_class"] = tokenizer
+        logging.info("Using processing_class parameter for tokenizer")
+    elif "tokenizer" in params:
+        common_kwargs["tokenizer"] = tokenizer
+        logging.info("Using tokenizer parameter")
+    else:
+        logging.warning("Neither tokenizer nor processing_class found in SFTTrainer parameters")
 
     try:
         trainer = SFTTrainer(**common_kwargs)
-    except TypeError:
-        # Last resort for older/newer TRL variants
-        common_kwargs.pop("tokenizer", None)
+        logging.info("SFTTrainer created successfully")
+    except TypeError as e:
+        logging.error(f"Failed to create SFTTrainer with tokenizer: {e}")
+        # Last resort: try without tokenizer/processing_class
         common_kwargs.pop("processing_class", None)
-        trainer = SFTTrainer(**common_kwargs)
+        common_kwargs.pop("tokenizer", None)
+        try:
+            trainer = SFTTrainer(**common_kwargs)
+            logging.info("SFTTrainer created without tokenizer parameter")
+        except TypeError as e2:
+            logging.error(f"Failed to create SFTTrainer even without tokenizer: {e2}")
+            raise e2
     
     logging.info("Starting training...")
     trainer.train()
