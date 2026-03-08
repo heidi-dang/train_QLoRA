@@ -243,6 +243,29 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
         else:
             logging.info(f"Skipping unsupported parameter: {param}")
 
+    if "dataset_text_field" not in supported_params:
+        try:
+            cols = getattr(dataset, "column_names", None)
+            if cols and "text" in cols:
+                max_len = int(os.environ.get("MAX_SEQ_LENGTH", "2048"))
+
+                def _tok(batch):
+                    return tokenizer(
+                        batch["text"],
+                        truncation=True,
+                        max_length=max_len,
+                    )
+
+                dataset = dataset.map(
+                    _tok,
+                    batched=True,
+                    remove_columns=list(cols),
+                    desc="Tokenizing dataset",
+                )
+                common_kwargs["train_dataset"] = dataset
+        except Exception:
+            logging.exception("Failed to tokenize dataset")
+
     try:
         trainer = SFTTrainer(**common_kwargs)
         logging.info("SFTTrainer created successfully")
