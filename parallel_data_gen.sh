@@ -114,20 +114,29 @@ start() {
   echo "  output:     $run_dir"
   echo "  log:        $log_file"
 
-  nohup "$VENV_PY" -u - <<PY >"$log_file" 2>&1 &
+  export PARALLEL_DATA_GEN_ROOT="$ROOT"
+  export PARALLEL_DATA_GEN_RUN_DIR="$run_dir"
+  export PARALLEL_DATA_GEN_REPOS_DIR="$repos_dir"
+  export PARALLEL_DATA_GEN_RAW_DIR="$raw_dir"
+  export PARALLEL_DATA_GEN_REPO_LIST="$repos_list"
+  export PARALLEL_DATA_GEN_FILELIST_OUT="$filelist_out"
+  export PARALLEL_DATA_GEN_QUERY="$query"
+  export PARALLEL_DATA_GEN_LANGS="$languages_csv"
+
+  nohup "$VENV_PY" -u - <<'PY' >"$log_file" 2>&1 &
 import os
 import re
 from pathlib import Path
 
-ROOT = os.path.abspath("$ROOT")
-RUN_DIR = os.path.abspath("$run_dir")
-REPOS_DIR = os.path.abspath("$repos_dir")
-RAW_DIR = os.path.abspath("$raw_dir")
-REPO_LIST = os.path.abspath("$repos_list")
-FILELIST_OUT = os.path.abspath("$filelist_out")
+ROOT = os.path.abspath(os.environ["PARALLEL_DATA_GEN_ROOT"])
+RUN_DIR = os.path.abspath(os.environ["PARALLEL_DATA_GEN_RUN_DIR"])
+REPOS_DIR = os.path.abspath(os.environ["PARALLEL_DATA_GEN_REPOS_DIR"])
+RAW_DIR = os.path.abspath(os.environ["PARALLEL_DATA_GEN_RAW_DIR"])
+REPO_LIST = os.path.abspath(os.environ["PARALLEL_DATA_GEN_REPO_LIST"])
+FILELIST_OUT = os.path.abspath(os.environ["PARALLEL_DATA_GEN_FILELIST_OUT"])
 
-QUERY = "$query"
-LANGS = [l.strip() for l in "$languages_csv".split(",") if l.strip()]
+QUERY = os.environ.get("PARALLEL_DATA_GEN_QUERY", "").strip()
+LANGS = [l.strip() for l in os.environ.get("PARALLEL_DATA_GEN_LANGS", "").split(",") if l.strip()]
 
 # 1) Search repos
 from github_search import GitHubSearcher
