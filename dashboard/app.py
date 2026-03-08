@@ -28,8 +28,25 @@ DATA_DIR = os.path.join(ROOT, 'data/ai-lab')
 CHECKPOINTS_DIR = os.path.join(DATA_DIR, 'checkpoints')
 STATE_DIR = os.path.join(ROOT, 'state')
 TELEMETRY_FILE = os.path.join(STATE_DIR, 'telemetry.json')
+ENV_FILE = os.path.join(ROOT, '.env')
 
 console = Console()
+
+# Load environment variables
+def load_env():
+    """Load environment variables from .env file."""
+    env_vars = {}
+    if os.path.exists(ENV_FILE):
+        with open(ENV_FILE, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    env_vars[key.strip()] = value.strip()
+    return env_vars
+
+# Global environment variables
+ENV = load_env()
 
 class ResourceMonitor:
     """Monitor system resources."""
@@ -292,12 +309,39 @@ class LoRAMonitor:
             pass
 
 class DataGenerationMonitor:
-    """Monitor teacher data generation progress."""
+    """Monitor teacher data generation progress and cost."""
     
     def __init__(self):
         self.total_samples = 0
         self.processed_samples = 0
         self.generation_stage = 'idle'
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+        self.total_tokens = 0
+        self.request_count = 0
+        self.total_cost = 0.0
+        
+    def get_pricing(self, model: str) -> Dict[str, float]:
+        """Get pricing for the specified model."""
+        pricing = {
+            'grok-4-1-fast': {
+                'input_price': float(ENV.get('GROK_4_1_FAST_INPUT_PRICE', '0.20')),
+                'output_price': float(ENV.get('GROK_4_1_FAST_OUTPUT_PRICE', '0.50'))
+            },
+            'gpt-4': {
+                'input_price': float(ENV.get('GPT_4_INPUT_PRICE', '0.03')),
+                'output_price': float(ENV.get('GPT_4_OUTPUT_PRICE', '0.06'))
+            },
+            'gpt-3.5-turbo': {
+                'input_price': float(ENV.get('GPT_3_5_TURBO_INPUT_PRICE', '0.0015')),
+                'output_price': float(ENV.get('GPT_3_5_TURBO_OUTPUT_PRICE', '0.002'))
+            },
+            'claude-3-sonnet': {
+                'input_price': float(ENV.get('CLAUDE_3_SONNET_INPUT_PRICE', '0.015')),
+                'output_price': float(ENV.get('CLAUDE_3_SONNET_OUTPUT_PRICE', '0.075'))
+            }
+        }
+        return pricing.get(model, pricing['grok-4-1-fast'])  # Default to grok pricing
         
     def get_generation_status(self) -> Dict[str, Any]:
         """Get data generation status."""
@@ -313,7 +357,16 @@ class DataGenerationMonitor:
             'processed_samples': self.processed_samples,
             'progress_percent': (self.processed_samples / self.total_samples * 100) if self.total_samples > 0 else 0,
             'generation_stage': self.generation_stage,
-            'samples_per_minute': self._calculate_generation_rate()
+            'samples_per_minute': self._calculate_generation_rate(),
+            'provider': ENV.get('TEACHER_MODEL', 'grok-4-1-fast'),
+            'model': ENV.get('TEACHER_MODEL', 'grok-4-1-fast'),
+            'prompt_tokens': self.prompt_tokens,
+            'completion_tokens': self.completion_tokens,
+            'total_tokens': self.total_tokens,
+            'request_count': self.request_count,
+            'total_cost': self.total_cost,
+            'input_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'grok-4-1-fast'))['input_price'],
+            'output_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'grok-4-1-fast'))['output_price']
         }
     
     def _load_from_telemetry(self) -> Dict[str, Any]:
@@ -356,7 +409,26 @@ class DataGenerationMonitor:
                 elif 'Generated' in line and 'samples' in line:
                     sample_match = re.search(r'Generated[:\s]+(\d+)', line)
                     if sample_match:
-                        self.processed_samples = int(sample_match.group(1))
+                        self.processed_samples = int(sample_match.group(1)))
+                elif 'tokens' in line.lower() and ('prompt' in line.lower() or 'completion' in line.lower()):
+                    # Extract token usage from logs
+                    if 'prompt tokens:' in line.lower():
+                        token_match = re.search(r'prompt tokens[:\s]+([\d,]+)', line)
+                        if token_match:
+                            self.prompt_tokens = int(token_match.group(1).replace(',', ''))
+                    elif 'completion tokens:' in line.lower():
+                        token_match = re.search(r'completion tokens[:\s]+([\d,]+)', line)
+                        if token_match:
+                            self.completion_tokens = int(token_match.group(1).replace(',', ''))
+                    elif 'total tokens:' in line.lower():
+                        token_match = re.search(r'total tokens[:\s]+([\d,]+)', line)
+                        if token_match:
+                            self.total_tokens = int(token_match.group(1).replace(',', ''))
+                elif 'API request' in line or 'requests:' in line.lower():
+                    # Count requests
+                    req_match = re.search(r'(\d+)\s+request', line.lower())
+                    if req_match:
+                        self.request_count = int(req_match.group(1))
                 elif 'samples to' in line and 'generate' in line:
                     # Try to get target from config
                     config_file = os.path.join(ROOT, 'config.json')
@@ -364,6 +436,15 @@ class DataGenerationMonitor:
                         with open(config_file, 'r') as f:
                             config = json.load(f)
                             self.total_samples = config.get('samples_per_round', 100)
+            
+            # Calculate cost based on model and tokens
+            teacher_model = ENV.get('TEACHER_MODEL', 'grok-4-1-fast')
+            pricing = self.get_pricing(teacher_model)
+            
+            if self.prompt_tokens > 0 or self.completion_tokens > 0:
+                input_cost = (self.prompt_tokens / 1000) * pricing['input_price']
+                output_cost = (self.completion_tokens / 1000) * pricing['output_price']
+                self.total_cost = input_cost + output_cost
         
         except Exception:
             pass
@@ -519,13 +600,22 @@ class Dashboard:
         table.add_row("Samples", f"{data['processed_samples']}/{data['total_samples']}")
         table.add_row("Progress", f"{data['progress_percent']:.1f}%")
         
-        if data.get('provider'):
-            table.add_row("Provider", data['provider'])
-            table.add_row("Model", data['model'])
-            table.add_row("Tokens", f"{data.get('total_tokens', 0):,}")
-            table.add_row("Cost", f"${data.get('spend_usd', 0):.4f}")
+        # Token usage and cost information
+        table.add_row("Provider", data.get('provider', 'N/A'))
+        table.add_row("Model", data.get('model', 'N/A'))
+        table.add_row("Requests", f"{data.get('request_count', 0):,}")
+        table.add_row("Prompt Tokens", f"{data.get('prompt_tokens', 0):,}")
+        table.add_row("Completion Tokens", f"{data.get('completion_tokens', 0):,}")
+        table.add_row("Total Tokens", f"{data.get('total_tokens', 0):,}")
         
-        return Panel(table, title="📊 Data Gen", border_style="blue")
+        # Pricing information
+        if data.get('input_price') and data.get('output_price'):
+            table.add_row("Input Price", f"${data.get('input_price', 0):.2f}/1K tokens")
+            table.add_row("Output Price", f"${data.get('output_price', 0):.2f}/1K tokens")
+        
+        table.add_row("Cost", f"${data.get('total_cost', 0):.4f}")
+        
+        return Panel(table, title="📊 Data Gen & Cost", border_style="blue")
     
     def create_progress_panel(self) -> Panel:
         """Create progress panel."""

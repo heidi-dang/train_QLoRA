@@ -84,7 +84,7 @@ case $CMD in
     rm -f "$STATE/STOP" 2>/dev/null || true
     
     echo "✅ All services stopped. Starting setup..."
-    $VENV_PYTHON setup_config.py
+    $VENV_PYTHON setup_env.py
     ;;
   search)
     # GitHub repository search
@@ -247,7 +247,7 @@ case $CMD in
     echo "Usage: $0 {setup|search|up|stop|status|doctor|train-once|dashboard|heidi|logs}"
     echo ""
     echo "Commands:"
-    echo "  setup     - Interactive configuration setup"
+    echo "  setup     - Interactive environment configuration setup"
     echo "  search    - Search GitHub repositories"
     echo "  up        - Start all services"
     echo "  stop      - Stop all services"
@@ -257,5 +257,10 @@ case $CMD in
     echo "  dashboard - Start rich monitoring dashboard"
     echo "  heidi     - Start Heidi Engine integrated dashboard"
     echo "  logs      - Start interactive log viewer"
+    echo ""
+    echo "Configuration:"
+    echo "  - Edit .env file directly for manual configuration"
+    echo "  - Run './run.sh setup' for interactive configuration"
+    echo "  - Copy .env.template to .env for template"
     ;;
 esac
