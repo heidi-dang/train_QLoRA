@@ -140,9 +140,11 @@ ALLOWED_STATUS_FIELDS: Set[str] = {
     "counters",
     "usage",
     "gpu_summary",
+    "resource_stats",
     "last_event_ts",
     "health",
     "updated_at",
+    "sequence_number",
 }
 
 
@@ -398,7 +400,9 @@ def get_run_id() -> str:
 # TUNABLE: Add new models here or create pricing.json
 # prices are per 1M tokens
 DEFAULT_PRICING = {
-    "gpt-4o-mini": {"input": 0.15, "output": 0.60},  # $/1M tokens
+    "github-copilot/gpt-5.3-codex": {"input": 0.00, "output": 0.00},  # Free for subscribers
+    "xai/grok-4-1-fast": {"input": 0.20, "output": 0.50},           # $/1M tokens
+    "gpt-4o": {"input": 5.00, "output": 15.00},                     # legacy ref
     "gpt-4o": {"input": 2.50, "output": 10.00},
     "gpt-4-turbo": {"input": 10.00, "output": 30.00},
     "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},
@@ -473,7 +477,8 @@ def estimate_cost(input_tokens: int, output_tokens: int, model: str) -> float:
 # Allowed config fields with types and constraints
 CONFIG_SCHEMA = {
     "BASE_MODEL": {"type": str, "required": False, "default": "mistralai/Mistral-7B-Instruct-v0.2"},
-    "TEACHER_MODEL": {"type": str, "required": False, "default": "gpt-4o-mini"},
+    "TEACHER_MODEL": {"type": str, "required": False, "default": "github-copilot/gpt-5.3-codex"},
+    "TEACHER_FAILBACK_MODEL": {"type": str, "required": False, "default": "xai/grok-4-1-fast"},
     "SAMPLES_PER_ROUND": {"type": int, "required": False, "default": 50, "min": 1, "max": 10000},
     "ROUNDS": {"type": int, "required": False, "default": 3, "min": 1, "max": 100},
     "VAL_RATIO": {"type": (int, float), "required": False, "default": 0.1, "min": 0.0, "max": 1.0},
@@ -619,6 +624,7 @@ def init_telemetry(
             "current_stage": "initializing",
             "stop_requested": False,
             "pause_requested": False,
+            "sequence_number": 0,
             "counters": get_default_counters(),
             "usage": get_default_usage(),
             "config": {},  # Don't store config in state for security
@@ -763,8 +769,22 @@ def save_state(state: Dict[str, Any], run_id: Optional[str] = None) -> None:
     state_file = get_state_path(run_id)
     temp_file = state_file.with_suffix(".tmp")
 
-    # Update timestamp
+    # Load existing state to merge if file exists
+    current_state = {}
+    if state_file.exists():
+        try:
+            with open(state_file, "r") as f:
+                current_state = json.load(f)
+        except Exception:
+            pass
+            
+    # Merge updates into current state
+    current_state.update(state)
+    state = current_state
+
+    # Update timestamp and sequence number
     state["updated_at"] = datetime.utcnow().isoformat()
+    state["sequence_number"] = state.get("sequence_number", 0) + 1
 
     # Write to temp file
     with open(temp_file, "w") as f:
@@ -1369,6 +1389,53 @@ def stage_context(stage: str, round_num: int, message: str, **kwargs):
 # =============================================================================
 
 
+def get_gpu_summary() -> Dict[str, Any]:
+    """Get minimal GPU info without exposing sensitive data."""
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=memory.used,memory.total,utilization.gpu",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            parts = result.stdout.strip().split(",")
+            if len(parts) >= 2:
+                return {
+                    "vram_used_mb": int(parts[0].strip()),
+                    "vram_total_mb": int(parts[1].strip()),
+                    "util_pct": int(parts[2].strip()) if len(parts) > 2 else 0,
+                    "available": True,
+                }
+    except Exception:
+        pass
+    return {"available": False}
+
+
+def get_resource_summary() -> Dict[str, Any]:
+    """Get system resource summary (CPU, RAM)."""
+    try:
+        import psutil
+
+        cpu_pct = psutil.cpu_percent(interval=None)
+        mem = psutil.virtual_memory()
+
+        return {
+            "cpu_pct": cpu_pct,
+            "ram_pct": mem.percent,
+            "ram_used_gb": mem.used / (1024**3),
+            "ram_total_gb": mem.total / (1024**3),
+        }
+    except Exception:
+        return {}
+
+
 def get_last_event_ts() -> Optional[str]:
     """Get timestamp of last event."""
     try:
@@ -1452,32 +1519,7 @@ def start_http_server(port: int = 7779) -> None:
     # Use existing helper functions
     # (get_gpu_summary, get_last_event_ts, redact_state are defined in outer scope)
 
-    def get_gpu_summary() -> Dict[str, Any]:
-        """Get minimal GPU info without exposing sensitive data."""
-        try:
-            import subprocess
-
-            result = subprocess.run(
-                [
-                    "nvidia-smi",
-                    "--query-gpu=memory.used,memory.total,utilization.gpu",
-                    "--format=csv,noheader,nounits",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
-                parts = result.stdout.strip().split(",")
-                if len(parts) >= 2:
-                    return {
-                        "vram_used_mb": int(parts[0].strip()),
-                        "vram_total_mb": int(parts[1].strip()),
-                        "util_pct": int(parts[2].strip()) if len(parts) > 2 else 0,
-                    }
-        except Exception:
-            pass
-        return {"available": False}
+    # get_gpu_summary, get_last_event_ts, redact_state are now global
 
     class StateHandler(BaseHTTPRequestHandler):
         """HTTP handler with security restrictions."""

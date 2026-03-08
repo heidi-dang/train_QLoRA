@@ -204,46 +204,88 @@ case $CMD in
   stop)
     echo "🛑 Stopping all services..."
     touch "$STATE/STOP"
+    echo "Signal file created: $STATE/STOP"
     
-    # Kill processes with PID files first
+    # List of explicit patterns to kill
+    PATTERNS=(
+      "train_q_lora.py"
+      "train_loop.py"
+      "generate_samples.py"
+      "clean_dataset.py"
+      "evaluate_model.py"
+      "run_round.py"
+      "scrape_repos.py"
+      "train_api:app"
+      "mlflow server"
+      "tensorboard"
+      "dashboard.app"
+      "heidi_integration"
+      "log_viewer"
+    )
+
+    # 1. Kill processes with PID files first (clean stop)
+    echo "🧹 Attempting clean stop of tracked services..."
     for pidfile in "$PIDS"/*.pid; do
       if [ -f "$pidfile" ]; then
         pid=$(cat "$pidfile")
+        service=$(basename "$pidfile" .pid)
         if kill -0 "$pid" 2>/dev/null; then
-          echo "Stopping PID $pid from $(basename $pidfile .pid)"
+          echo "Stopping $service (PID $pid)..."
           kill "$pid" 2>/dev/null || true
-          sleep 1
-          kill -9 "$pid" 2>/dev/null || true
+          sleep 0.5
         fi
         rm -f "$pidfile"
       fi
     done
     
-    # Kill ALL training and related processes (force kill to be sure)
-    echo "🔥 Force-killing all training processes..."
-    pkill -9 -f "train_q_lora.py" 2>/dev/null || true
-    pkill -9 -f "train_loop.py" 2>/dev/null || true
-    pkill -9 -f "generate_samples.py" 2>/dev/null || true
-    pkill -9 -f "train_api:app" 2>/dev/null || true
-    pkill -9 -f "mlflow server" 2>/dev/null || true
-    pkill -9 -f "tensorboard" 2>/dev/null || true
+    # 2. Check and kill by pattern (more thorough)
+    echo "🔥 Identifying and stopping any remaining training processes..."
+    for pattern in "${PATTERNS[@]}"; do
+      # Find PIDs for the pattern
+      PIDS_FOUND=$(pgrep -f "$pattern" || true)
+      if [ -n "$PIDS_FOUND" ]; then
+        for pid in $PIDS_FOUND; do
+          if [ "$pid" != "$$" ]; then # Don't kill self
+            # Get the full command line for logging
+            cmdline=$(ps -p "$pid" -o args= | head -1)
+            echo "Stopping PID $pid: $cmdline"
+            kill -9 "$pid" 2>/dev/null || true
+          fi
+        done
+      fi
+    done
     
-    # Kill ALL dashboard processes (comprehensive patterns)
-    echo "🗑️ Force-killing all dashboard processes..."
-    pkill -9 -f "dashboard.app" 2>/dev/null || true
-    pkill -9 -f "python.*dashboard" 2>/dev/null || true
-    pkill -9 -f "python.*app.*main" 2>/dev/null || true
-    pkill -9 -f "from dashboard.app import main" 2>/dev/null || true
-    pkill -9 -f "dashboard.*main" 2>/dev/null || true
+    # 3. Final catch-all for anything in the venv
+    echo "🧹 Final cleanup of venv processes..."
+    VENV_PIDS=$(pgrep -f "$VENV/bin/python" || true)
+    if [ -n "$VENV_PIDS" ]; then
+        for pid in $VENV_PIDS; do
+            if [ "$pid" != "$$" ]; then
+                echo "Killing leftover venv process: $pid"
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+        done
+    fi
     
-    # Additional cleanup for any remaining python processes from our venv
-    echo "🧹 Cleaning up any remaining venv processes..."
-    pkill -9 -f "$VENV/bin/python" 2>/dev/null || true
+    # Kill any runaway GPU processes if they look like ours
+    if command -v nvidia-smi &> /dev/null; then
+        echo "🔍 Checking for stray GPU processes..."
+        GPU_PIDS=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader || true)
+        for pid in $GPU_PIDS; do
+            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+                cmdline=$(ps -p "$pid" -o args= | head -1)
+                if [[ "$cmdline" == *"$ROOT"* ]] || [[ "$cmdline" == *"python"* ]]; then
+                    echo "Stopping stray GPU PID $pid: $cmdline"
+                    kill -9 "$pid" 2>/dev/null || true
+                fi
+            fi
+        done
+    fi
+
+    # Wait a moment for OS to catch up
+    sleep 1
     
-    # Wait a moment for processes to die
-    sleep 2
-    
-    echo "✅ All processes killed successfully!"
+    echo "✅ All training processes identified and stopped!"
     ;;
   status)
     for pidfile in "$PIDS"/*.pid; do

@@ -16,5 +16,6 @@ wandb
 tensorboard
 PyGithub
 python-dotenv
-rich
+rich>=13.0.0
+setuptools<70.0.0
 setuptools

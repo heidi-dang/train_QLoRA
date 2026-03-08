@@ -45,10 +45,10 @@ class TeacherAPIClient:
         self.provider = (provider or env_provider or inferred_provider) or "grok"
 
         # Model selection
-        if self.provider == "copilot":
-            self.model = model or os.environ.get("TEACHER_COPILOT_MODEL", "gpt-5-mini")
-        else:
-            self.model = model or os.environ.get("TEACHER_MODEL", "grok-4-1-fast")
+        # Primary: TEACHER_MODEL
+        # Secondary/Failback: TEACHER_FAILBACK_MODEL
+        self.model = model or os.environ.get("TEACHER_MODEL", "github-copilot/gpt-5.3-codex")
+        self.failback_model = os.environ.get("TEACHER_FAILBACK_MODEL", "xai/grok-4-1-fast")
 
         self.last_call_time = 0
         self.min_interval = 1.0
@@ -197,20 +197,41 @@ class TeacherAPIClient:
         return "", False
 
     def generate(self, prompt: str, code: str) -> str:
-        if self.provider == "copilot":
-            result, _ = self._call_copilot(prompt, code)
+        # Step 1: Attempt Primary
+        provider = self.provider
+        model = self.model
+        
+        logging.info(f"Primary teacher attempt: {provider}/{model}")
+        result, success = self._attempt_call(provider, model, prompt, code)
+        if success:
             return result
-        if "grok" in self.provider:
-            result, success = self._call_grok(prompt, code)
-            if result:
+            
+        # Step 2: Attempt Failback
+        if self.failback_model:
+            fb_provider = self.failback_model.split("/")[0].strip().lower()
+            if fb_provider == "xai": fb_provider = "grok"
+            logging.warning(f"Primary failed, attempting failback: {fb_provider}/{self.failback_model}")
+            result, success = self._attempt_call(fb_provider, self.failback_model, prompt, code)
+            if success:
                 return result
-            result2, _ = self._call_openai(prompt, code)
-            return result2
-        elif "openai" in self.provider or "gpt" in self.provider:
-            result, _ = self._call_openai(prompt, code)
-            return result
-        logging.error(f"No valid provider: {self.provider}")
+
+        logging.error("All teacher attempts failed.")
         return ""
+
+    def _attempt_call(self, provider: str, model: str, prompt: str, code: str) -> Tuple[str, bool]:
+        """Internal helper for specific provider calls."""
+        orig_model = self.model
+        self.model = model  # Temporarily override model for the call
+        try:
+            if provider == "copilot" or "github" in provider:
+                return self._call_copilot(prompt, code)
+            elif "grok" in provider or "xai" in provider:
+                return self._call_grok(prompt, code)
+            elif "openai" in provider or "gpt" in provider:
+                return self._call_openai(prompt, code)
+            return "", False
+        finally:
+            self.model = orig_model
 
 
 def get_client():

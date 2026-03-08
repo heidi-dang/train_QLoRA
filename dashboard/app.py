@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Rich Dashboard for QLoRA Training with Live Monitoring."""
-
 import os
 import sys
 import json
@@ -8,6 +5,7 @@ import time
 import psutil
 import subprocess
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
 from rich.console import Console
@@ -20,6 +18,7 @@ from rich.live import Live
 from rich.align import Align
 from rich.columns import Columns
 from rich import box
+from dashboard import heidi_telemetry
 
 # Constants
 ROOT = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -61,24 +60,32 @@ class ResourceMonitor:
         self.start_time = time.time()
         
     def get_current_stats(self) -> Dict[str, Any]:
-        """Get current resource statistics."""
+        """Get current resource statistics from telemetry."""
+        # Use centralized telemetry for resource stats
+        resource_stats = heidi_telemetry.get_resource_summary()
+        gpu_stats = heidi_telemetry.get_gpu_summary()
+        
         stats = {
-            'cpu_percent': psutil.cpu_percent(interval=0.1),
-            'memory_percent': psutil.virtual_memory().percent,
-            'memory_used_gb': psutil.virtual_memory().used / (1024**3),
-            'memory_total_gb': psutil.virtual_memory().total / (1024**3),
+            'cpu_percent': resource_stats.get('cpu_pct', 0),
+            'memory_percent': resource_stats.get('ram_pct', 0),
+            'memory_used_gb': resource_stats.get('ram_used_gb', 0),
+            'memory_total_gb': resource_stats.get('ram_total_gb', 0),
             'disk_usage': psutil.disk_usage(ROOT).percent,
             'uptime_hours': (time.time() - self.start_time) / 3600,
         }
         
-        # GPU stats if available
-        try:
-            gpu_stats = self._get_gpu_stats()
-            stats.update(gpu_stats)
-        except Exception:
-            stats['gpu_utilization'] = 0
-            stats['gpu_memory_used'] = 0
-            stats['gpu_memory_total'] = 0
+        if gpu_stats.get('available'):
+            stats.update({
+                'gpu_utilization': gpu_stats.get('util_pct', 0),
+                'gpu_memory_used': gpu_stats.get('vram_used_mb', 0) / 1024,
+                'gpu_memory_total': gpu_stats.get('vram_total_mb', 0) / 1024,
+            })
+        else:
+            stats.update({
+                'gpu_utilization': 0,
+                'gpu_memory_used': 0,
+                'gpu_memory_total': 0,
+            })
             
         return stats
     
@@ -195,38 +202,36 @@ class TrainingMonitor:
         return status
     
     def _load_from_telemetry(self) -> Dict[str, Any]:
-        """Load training status from telemetry file."""
-        if not os.path.exists(TELEMETRY_FILE):
+        """Load training status from telemetry."""
+        # Use heidi_telemetry module directly
+        state = heidi_telemetry.get_state()
+        if not state or state.get('status') == 'idle':
             return None
             
-        try:
-            with open(TELEMETRY_FILE, 'r') as f:
-                telemetry = json.load(f)
-            
-            current_stage = (telemetry.get('current_stage', '') or '').lower()
-            status = (telemetry.get('status', 'idle') or 'idle').lower()
-            is_training = status in ['running', 'training'] or ('train' in current_stage)
+        current_stage = (state.get('current_stage', '') or '').lower()
+        status = (state.get('status', 'idle') or 'idle').lower()
+        is_training = status in ['running', 'training'] or ('train' in current_stage)
 
-            return {
-                'current_round': telemetry.get('stage_index', 0),
-                'training_step': telemetry.get('completed_units', 0),
-                'total_steps': telemetry.get('total_units', 500),
-                'progress_percent': telemetry.get('overall_percent', 0) * 100,
-                'training_loss': 0,  # Not in telemetry
-                'learning_rate': 2e-4,  # Default
-                'start_time': None,
-                'estimated_completion': None,
-                'is_training': is_training,
-                'total_rounds': telemetry.get('total_stages', 10),
-                'round_progress': telemetry.get('stage_percent', 0) * 100,
-                'training_speed': 0,
-                'samples_processed': telemetry.get('completed_units', 0),
-                'total_samples': telemetry.get('total_units', 100),
-                'current_stage': current_stage,
-                'status': status,
-            }
-        except Exception:
-            return None
+        return {
+            'current_round': state.get('current_round', 0),
+            'training_step': state.get('counters', {}).get('train_step', 0),
+            'total_steps': state.get('config', {}).get('TRAIN_STEPS', 500),
+            'progress_percent': 0, # Calculated below
+            'training_loss': state.get('counters', {}).get('train_loss', 0),
+            'learning_rate': 2e-4,  # Fallback
+            'start_time': None,
+            'estimated_completion': None,
+            'is_training': is_training,
+            'total_rounds': state.get('config', {}).get('ROUNDS', 10),
+            'round_progress': 0, # Calculated below
+            'training_speed': 0,
+            'samples_processed': state.get('counters', {}).get('raw_written', 0),
+            'total_samples': state.get('config', {}).get('SAMPLES_PER_ROUND', 100),
+            'current_stage': current_stage,
+            'status': status,
+            'sequence_number': state.get('sequence_number', 0),
+            'updated_at': state.get('updated_at'),
+        }
     
     def _is_training_active(self) -> bool:
         """Check if training is currently active."""
@@ -465,36 +470,20 @@ class DataGenerationMonitor:
     def get_pricing(self, model: str) -> Dict[str, float]:
         """Get pricing for the specified model."""
         pricing = {
-            'grok-4-1-fast': {
+            'github-copilot/gpt-5.3-codex': {
+                'input_price': float(ENV.get('GPT_5_3_CODEX_INPUT_PRICE', '0.00')),
+                'output_price': float(ENV.get('GPT_5_3_CODEX_OUTPUT_PRICE', '0.00'))
+            },
+            'xai/grok-4-1-fast': {
                 'input_price': float(ENV.get('GROK_4_1_FAST_INPUT_PRICE', '0.20')),
                 'output_price': float(ENV.get('GROK_4_1_FAST_OUTPUT_PRICE', '0.50'))
             },
-            'gpt-4': {
-                'input_price': float(ENV.get('GPT_4_INPUT_PRICE', '0.03')),
-                'output_price': float(ENV.get('GPT_4_OUTPUT_PRICE', '0.06'))
-            },
-            'gpt-3.5-turbo': {
-                'input_price': float(ENV.get('GPT_3_5_TURBO_INPUT_PRICE', '0.0015')),
-                'output_price': float(ENV.get('GPT_3_5_TURBO_OUTPUT_PRICE', '0.002'))
-            },
-            'gpt-5-mini': {
-                'input_price': float(ENV.get('GPT_5_MINI_INPUT_PRICE', '0.015')),
-                'output_price': float(ENV.get('GPT_5_MINI_OUTPUT_PRICE', '0.075'))
-            },
-            'claude-3-sonnet': {
-                'input_price': float(ENV.get('CLAUDE_3_SONNET_INPUT_PRICE', '0.015')),
-                'output_price': float(ENV.get('CLAUDE_3_SONNET_OUTPUT_PRICE', '0.075'))
-            },
-            'copilot': {
-                'input_price': float(ENV.get('COPILOT_INPUT_PRICE', '0.015')),
-                'output_price': float(ENV.get('COPILOT_OUTPUT_PRICE', '0.075'))
-            },
-            'github-copilot': {
-                'input_price': float(ENV.get('COPILOT_INPUT_PRICE', '0.015')),
-                'output_price': float(ENV.get('COPILOT_OUTPUT_PRICE', '0.075'))
+            'gpt-4o': {
+                'input_price': float(ENV.get('GPT_4_INPUT_PRICE', '2.50')),
+                'output_price': float(ENV.get('GPT_4_OUTPUT_PRICE', '10.00'))
             }
         }
-        return pricing.get(model, pricing['copilot'])  # Default to copilot pricing
+        return pricing.get(model, pricing['github-copilot/gpt-5.3-codex'])
     
     def _format_provider(self, provider: str) -> str:
         """Format provider name for display."""
@@ -526,14 +515,14 @@ class DataGenerationMonitor:
             'generation_stage': self.generation_stage,
             'samples_per_minute': self._calculate_generation_rate(),
             'provider': self._format_provider(ENV.get('TEACHER_PROVIDER', 'copilot')),
-            'model': ENV.get('TEACHER_MODEL', 'gpt-5-mini'),
+            'model': ENV.get('TEACHER_MODEL', 'github-copilot/gpt-5.3-codex'),
             'prompt_tokens': self.prompt_tokens,
             'completion_tokens': self.completion_tokens,
             'total_tokens': self.total_tokens,
             'request_count': self.request_count,
             'total_cost': self.total_cost,
-            'input_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'gpt-5-mini'))['input_price'],
-            'output_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'gpt-5-mini'))['output_price']
+            'input_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'github-copilot/gpt-5.3-codex'))['input_price'],
+            'output_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'github-copilot/gpt-5.3-codex'))['output_price']
         }
     
     def _load_from_telemetry(self) -> Dict[str, Any]:
@@ -547,7 +536,7 @@ class DataGenerationMonitor:
             
             usage = telemetry.get('usage', {})
 
-            model = usage.get('model') or ENV.get('TEACHER_MODEL', 'gpt-5-mini')
+            model = usage.get('model') or ENV.get('TEACHER_MODEL', 'github-copilot/gpt-5.3-codex')
             pricing = self.get_pricing(model)
             prompt_tokens = int(usage.get('prompt_tokens', 0) or 0)
             completion_tokens = int(usage.get('completion_tokens', 0) or 0)
@@ -624,7 +613,7 @@ class DataGenerationMonitor:
                             self.total_samples = config.get('samples_per_round', 100)
             
             # Calculate cost based on model and tokens
-            teacher_model = ENV.get('TEACHER_MODEL', 'grok-4-1-fast')
+            teacher_model = ENV.get('TEACHER_MODEL', 'github-copilot/gpt-5.3-codex')
             pricing = self.get_pricing(teacher_model)
             
             if self.prompt_tokens > 0 or self.completion_tokens > 0:
@@ -806,11 +795,12 @@ class Dashboard:
         self.layout = self.create_layout()
         self.running = True
         self.refresh_interval = 1.0
+        self.file_check_interval = 2.0  # Check for file changes every 2 seconds
         self.last_update = 0
         self.update_cache = {}
         self.cache_ttl = 0.5
         self.last_file_check = 0
-        self.file_check_interval = 2.0  # Check for file changes every 2 seconds
+        self.last_sequence_number = -1
         
     def create_layout(self) -> Layout:
         """Create dashboard layout."""
@@ -853,10 +843,51 @@ class Dashboard:
         return layout
     
     def create_header(self) -> Panel:
-        """Create header panel."""
-        header_text = "[bold cyan]🚀 QLoRA Training Pipeline Dashboard[/bold cyan]"
+        """Create header panel with run info and status."""
+        training = self.training_monitor.get_training_status()
+        status = training.get("status", "unknown").upper()
+        run_id = training.get("run_id", "unknown")
+        stage = training.get("current_stage", "N/A")
+        seq = training.get("sequence_number", 0)
+
+        table = Table.grid(expand=True)
+        table.add_column(justify="left", ratio=1)
+        table.add_column(justify="center", ratio=1)
+        table.add_column(justify="right", ratio=1)
+
+        status_colors = {
+            "RUNNING": "green",
+            "PAUSED": "yellow",
+            "STOPPED": "grey50",
+            "COMPLETED": "cyan",
+            "ERROR": "red",
+        }
+        status_color = status_colors.get(status, "white")
+
+        left = Text.assemble(
+            ("Run: ", "dim"), (f"{run_id} ", "cyan bold"),
+            ("Status: ", "dim"), (f"{status}", f"{status_color} bold")
+        )
+        
+        center = Text.assemble(
+            ("Stage: ", "dim"), (f"{stage} ", "white")
+        )
+
+        right = Text()
+        right.append("Seq: ", style="dim")
+        right.append(f"{seq} ", style="blue")
+        right.append("🕒 ", style="dim")
+        right.append(datetime.now().strftime("%H:%M:%S"), style="dim")
+        
+        # Add stale warning if last_update is old
+        if time.time() - self.last_update > 30:
+            right.append("\n[STALE DATA]", style="bold yellow")
+
+        table.add_row(left, center, right)
+
         return Panel(
-            Align.center(header_text),
+            table,
+            title="[bold cyan]🚀 QLoRA Training Pipeline Dashboard[/bold cyan]",
             border_style="blue",
             box=box.ROUNDED
         )
@@ -1113,19 +1144,26 @@ class Dashboard:
         return False
     
     def update(self):
-        """Update all monitors with caching."""
+        """Update all monitors with caching and stale data protection."""
         current_time = time.time()
         
         # Only update if cache expired
         if current_time - self.last_update > self.cache_ttl:
-            self.update_cache = {
-                'resources': self.resource_monitor.get_current_stats(),
-                'training': self.training_monitor.get_training_status(),
-                'lora': self.lora_monitor.get_lora_info(),
-                'data_gen': self.data_monitor.get_generation_status(),
-                'parallel_data_gen': self.parallel_data_monitor.get_generation_status(),
-                'logs': self.log_monitor.get_recent_logs('loop')[-30:]
-            }
+            training_status = self.training_monitor.get_training_status()
+            # Stale data protection: only update if sequence number has increased
+            seq = training_status.get('sequence_number', 0) if isinstance(training_status, dict) else -1
+            
+            if seq > self.last_sequence_number or self.last_sequence_number == -1:
+                self.last_sequence_number = seq
+                self.update_cache = {
+                    'resources': self.resource_monitor.get_current_stats(),
+                    'training': training_status,
+                    'lora': self.lora_monitor.get_lora_info(),
+                    'data_gen': self.data_monitor.get_generation_status(),
+                    'parallel_data_gen': self.parallel_data_monitor.get_generation_status(),
+                    'logs': self.log_monitor.get_recent_logs('loop')[-30:]
+                }
+                self.last_update = current_time
 
         # Keep layout up to date (render() is responsible for applying these)
         return self.update_cache

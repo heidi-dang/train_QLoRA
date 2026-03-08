@@ -71,6 +71,7 @@ from rich.table import Table
 from rich.text import Text
 
 from heidi_engine.state_machine import CANONICAL_AUTOTRAIN_DIR
+import heidi_telemetry
 
 # =============================================================================
 # CONFIGURATION - Adjust these for your needs
@@ -117,8 +118,8 @@ current_view = "overview"
 run_id: Optional[str] = None
 last_event_position = 0
 events_cache: deque = deque(maxlen=MAX_EVENTS)
-gpu_info: Dict[str, Any] = {"available": False}
-gpu_lock = threading.Lock()
+# Sequence tracking
+last_sequence_number = -1
 
 # Data tail settings
 data_tail_lines = 20
@@ -352,78 +353,7 @@ def format_time(ts: str) -> str:
 # =============================================================================
 
 
-def poll_gpu_info() -> Dict[str, Any]:
-    """
-    Poll GPU information using nvidia-smi.
-
-    HOW IT WORKS:
-        - Runs nvidia-smi command
-        - Parses output for VRAM usage
-        - Caches result for display
-
-    TUNABLE:
-        - Adjust polling frequency via GPU_POLL_INTERVAL
-        - Add more metrics as needed
-
-    RETURNS:
-        Dictionary with GPU info (empty if no GPU)
-    """
-    try:
-        import subprocess
-
-        result = subprocess.run(
-            [
-                "nvidia-smi",
-                "--query-gpu=memory.used,memory.total,utilization.gpu",
-                "--format=csv,noheader,nounits",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-
-        if result.returncode == 0:
-            parts = result.stdout.strip().split(",")
-            if len(parts) >= 2:
-                used = int(parts[0].strip())
-                total = int(parts[1].strip())
-                util = int(parts[2].strip()) if len(parts) > 2 else 0
-
-                return {
-                    "available": True,
-                    "memory_used_mb": used,
-                    "memory_total_mb": total,
-                    "memory_used_pct": (used / total * 100) if total > 0 else 0,
-                    "utilization_pct": util,
-                }
-    except Exception:
-        pass
-
-    return {"available": False}
-
-
-def start_gpu_poller():
-    """
-    Start background thread for GPU polling.
-
-    HOW IT WORKS:
-        - Polls GPU at intervals
-        - Updates global gpu_info
-        - Runs in background to avoid blocking
-
-    TUNABLE:
-        - Adjust GPU_POLL_INTERVAL for polling frequency
-    """
-
-    def poll_loop():
-        while running:
-            with gpu_lock:
-                global gpu_info
-                gpu_info = poll_gpu_info()
-            time.sleep(GPU_POLL_INTERVAL)
-
-    thread = threading.Thread(target=poll_loop, daemon=True)
-    thread.start()
+# GPU Monitoring is now centralized in heidi_telemetry
 
 
 # =============================================================================
@@ -433,53 +363,71 @@ def start_gpu_poller():
 
 def create_header(state: Dict[str, Any]) -> Panel:
     """
-    Create header panel with run info.
-
-    HOW IT WORKS:
-        - Shows run ID, status, current stage/round
-        - Color codes status
-
-    TUNABLE:
-        - Customize colors in PANEL_STYLES
-
-    ARGS:
-        state: Current state dictionary
-
-    RETURNS:
-        Rich Panel
+    Create header panel with run info and polling status.
+    Responsive layout using Table.grid.
     """
-    status = state.get("status", "unknown")
+    status = state.get("status", "unknown").upper()
     stage = state.get("current_stage", "N/A")
     round_num = state.get("current_round", 0)
     total_rounds = state.get("config", {}).get("ROUNDS", "?")
-
+    seq = state.get("sequence_number", 0)
+    
     # Color code status
     status_colors = {
-        "running": "green",
-        "paused": "yellow",
-        "stopped": "grey50",
-        "completed": "cyan",
-        "error": "red",
+        "RUNNING": "green",
+        "PAUSED": "yellow",
+        "STOPPED": "grey50",
+        "COMPLETED": "cyan",
+        "ERROR": "red",
     }
     status_color = status_colors.get(status, "white")
 
-    content = Text()
-    content.append("Run: ", Style(dim=True))
-    content.append(f"{state.get('run_id', 'unknown')}\n", Style(color="cyan", bold=True))
-    content.append("Status: ", Style(dim=True))
-    content.append(f"{status.upper()}\n", Style(color=status_color, bold=True))
-    content.append("Stage: ", Style(dim=True))
-    content.append(f"{stage}\n", Style(color="white"))
-    content.append("Round: ", Style(dim=True))
-    content.append(f"{round_num}/{total_rounds}", Style(color="white"))
+    # Use a table for better alignment on narrow screens
+    table = Table.grid(expand=True)
+    table.add_column(justify="left", ratio=1)
+    table.add_column(justify="center", ratio=1)
+    table.add_column(justify="right", ratio=1)
 
-    if state.get("stop_requested"):
-        content.append(" [STOP REQUESTED]", Style(color="red", bold=True))
-    if state.get("pause_requested"):
-        content.append(" [PAUSED]", Style(color="yellow", bold=True))
+    # Left: Run & Status
+    left = Text.assemble(
+        ("Run: ", "dim"), (f"{state.get('run_id', 'unknown')} ", "cyan bold"),
+        ("Status: ", "dim"), (f"{status}", f"{status_color} bold")
+    )
+    
+    # Center: Stage & Round
+    center = Text.assemble(
+        ("Stage: ", "dim"), (f"{stage} ", "white"),
+        ("Round: ", "dim"), (f"{round_num}/{total_rounds}", "white")
+    )
+    
+    # Right: Polling State
+    right = Text()
+    right.append("Seq: ", style="dim")
+    right.append(f"{seq} ", style="blue")
+    right.append("🕒 ", style="dim")
+    right.append(datetime.now().strftime("%H:%M:%S"), style="dim")
+    
+    if state.get("telemetry_stale"):
+        right.append("\n[STALE DATA]", style="bold yellow")
+    if state.get("telemetry_mismatch"):
+        mismatch_run = state.get("telemetry_mismatch_run", "unknown")
+        right.append(f"\n[RUN MISMATCH: {mismatch_run}]", style="bold red")
+
+    table.add_row(left, center, right)
+
+    # Add flags
+    flags = []
+    if state.get("stop_requested"): flags.append("[STOP REQUESTED]")
+    if state.get("pause_requested"): flags.append("[PAUSED]")
+    
+    if flags:
+        table.add_row(Text(" ".join(flags), style="bold red"), "", "")
 
     return Panel(
-        content, title="[bold]Heidi AutoTrain Dashboard[/bold]", border_style=PANEL_STYLES["header"]
+        table, 
+        title="[bold]Heidi AutoTrain Dashboard[/bold]", 
+        border_style=PANEL_STYLES["header"],
+        box=box.ROUNDED
     )
 
 
@@ -504,9 +452,9 @@ def create_counters_panel(state: Dict[str, Any]) -> Panel:
     """
     counters = state.get("counters", {})
 
-    table = Table(box=box.MINIMAL, show_header=True, header_style="bold magenta")
-    table.add_column("Metric", style="cyan", width=25)
-    table.add_column("Value", style="white", justify="right")
+    table = Table(box=box.MINIMAL, show_header=True, header_style="bold magenta", expand=True)
+    table.add_column("Metric", style="cyan", ratio=3)
+    table.add_column("Value", style="white", justify="right", ratio=2)
 
     # Teacher generation
     generated = counters.get("teacher_generated", 0)
@@ -575,9 +523,9 @@ def create_usage_panel(state: Dict[str, Any]) -> Panel:
     config = state.get("config", {})
     model = config.get("TEACHER_MODEL", "unknown")
 
-    table = Table(box=box.MINIMAL, show_header=True, header_style="bold blue")
-    table.add_column("Metric", style="cyan", width=25)
-    table.add_column("Value", style="white", justify="right")
+    table = Table(box=box.MINIMAL, show_header=True, header_style="bold blue", expand=True)
+    table.add_column("Metric", style="cyan", ratio=3)
+    table.add_column("Value", style="white", justify="right", ratio=2)
 
     requests = usage.get("requests_sent", 0)
     table.add_row("API Requests", str(requests))
@@ -638,9 +586,9 @@ def create_trainer_panel(state: Dict[str, Any]) -> Panel:
     counters = state.get("counters", {})
     config = state.get("config", {})
 
-    table = Table(box=box.MINIMAL, show_header=True, header_style="bold magenta")
-    table.add_column("Metric", style="cyan", width=25)
-    table.add_column("Value", style="white", justify="right")
+    table = Table(box=box.MINIMAL, show_header=True, header_style="bold magenta", expand=True)
+    table.add_column("Metric", style="cyan", ratio=3)
+    table.add_column("Value", style="white", justify="right", ratio=2)
 
     # Training progress
     train_step = counters.get("train_step", 0)
@@ -671,14 +619,13 @@ def create_trainer_panel(state: Dict[str, Any]) -> Panel:
 
     table.add_row("", "")  # Spacer
 
-    # GPU info
-    with gpu_lock:
-        ginfo = gpu_info.copy()
+    # GPU info (now from centralized telemetry)
+    gpu_summary = state.get("gpu_summary", {})
 
-    if ginfo.get("available"):
-        used = ginfo.get("memory_used_mb", 0)
-        total = ginfo.get("memory_total_mb", 0)
-        util = ginfo.get("utilization_pct", 0)
+    if gpu_summary.get("available"):
+        used = gpu_summary.get("memory_used_mb", 0)
+        total = gpu_summary.get("memory_total_mb", 0)
+        util = gpu_summary.get("utilization_pct", 0)
 
         table.add_row("GPU VRAM", f"{used} / {total} MB")
         table.add_row("VRAM Usage", f"{used / total * 100:.1f}%" if total > 0 else "N/A")
@@ -839,7 +786,7 @@ def create_config_panel(state: Dict[str, Any]) -> Panel:
 
     key_config = [
         ("BASE_MODEL", "base_model"),
-        ("TEACHER_MODEL", "teacher_model"),
+        ("TEACHER_MODEL", "github-copilot/gpt-5.3-codex"),
         ("SAMPLES_PER_ROUND", "samples_per_round"),
         ("ROUNDS", "rounds"),
         ("VAL_RATIO", "val_ratio"),
@@ -1085,8 +1032,7 @@ def run_dashboard(run_id: str):
     if events_file.exists():
         last_event_position = events_file.stat().st_size
 
-    # Start GPU poller
-    start_gpu_poller()
+    # start_gpu_poller() -> Now handled by centralized telemetry
 
     # Handle signals
     def signal_handler(sig, frame):
@@ -1097,13 +1043,52 @@ def run_dashboard(run_id: str):
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
+    last_sequence_number = -1
+    last_update_ts = 0
+
     # Main render loop
     try:
         with Live(console=console, refresh_per_second=REFRESH_RATE, screen=True) as live:
             while running:
-                # Load fresh state
-                state = load_state(run_id)
-                state["config"] = config
+                # Load fresh state from telemetry (centralized source)
+                telemetry_state = heidi_telemetry.get_state()
+                
+                # Load base state for the specific run
+                run_state = load_state(run_id)
+                run_state["config"] = config
+                
+                # Sequence-guarded update with restart detection
+                if telemetry_state:
+                    tel_run_id = telemetry_state.get('run_id')
+                    seq = telemetry_state.get('sequence_number', 0)
+                    
+                    # 1. Restart detection: if run_id matches but seq reset
+                    if tel_run_id == run_id and seq < last_sequence_number - 10:
+                        last_sequence_number = -1 # Force reset
+                        events_cache.clear()
+                        last_event_position = 0
+                    
+                    # 2. Update logic
+                    if seq > last_sequence_number or last_sequence_number == -1:
+                        last_sequence_number = seq
+                        last_update_ts = time.time()
+                        run_state.update(telemetry_state)
+                        state = run_state
+                    elif tel_run_id != run_id:
+                        # Mismatch: showing stale current-run data, but alert user
+                        state = run_state
+                        state["telemetry_mismatch"] = True
+                        state["telemetry_mismatch_run"] = tel_run_id
+                    elif time.time() - last_update_ts > 30:
+                        # Stale: more than 30s since last sequence bump
+                        state = run_state
+                        state.update(telemetry_state)
+                        state["telemetry_stale"] = True
+                    else:
+                        state = run_state
+                        state.update(telemetry_state)
+                else:
+                    state = run_state
 
                 # Check for new events
                 load_new_events(run_id)

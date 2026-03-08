@@ -32,30 +32,25 @@ def setup_environment():
     
     print("\n🤖 Teacher API Configuration:")
     config['TEACHER_API_KEY'] = input(f"Teacher API Key [{existing_env.get('TEACHER_API_KEY', 'YOUR_TEACHER_API_KEY_HERE')}]: ").strip() or existing_env.get('TEACHER_API_KEY', 'YOUR_TEACHER_API_KEY_HERE')
-    config['TEACHER_MODEL'] = input(f"Teacher model [{existing_env.get('TEACHER_MODEL', 'grok-4-1-fast')}]: ").strip() or existing_env.get('TEACHER_MODEL', 'grok-4-1-fast')
-    
+    config['TEACHER_MODEL'] = input(f"Primary Teacher model [{existing_env.get('TEACHER_MODEL', 'github-copilot/gpt-5.3-codex')}]: ").strip() or existing_env.get('TEACHER_MODEL', 'github-copilot/gpt-5.3-codex')
+    config['TEACHER_FAILBACK_MODEL'] = input(f"Failback Teacher model [{existing_env.get('TEACHER_FAILBACK_MODEL', 'xai/grok-4-1-fast')}]: ").strip() or existing_env.get('TEACHER_FAILBACK_MODEL', 'xai/grok-4-1-fast')
+
     print("\n💰 Pricing Configuration:")
-    print("Configure pricing for your teacher model (per 1K tokens):")
+    print("Configure pricing for primary model (per 1K tokens):")
     
     # Get current pricing or use defaults
-    if config['TEACHER_MODEL'] == 'grok-4-1-fast':
+    if config['TEACHER_MODEL'] == 'github-copilot/gpt-5.3-codex':
+        default_input = '0.00'
+        default_output = '0.00'
+    elif config['TEACHER_MODEL'] == 'xai/grok-4-1-fast':
         default_input = '0.20'
         default_output = '0.50'
-    elif config['TEACHER_MODEL'] == 'gpt-4':
-        default_input = '0.03'
-        default_output = '0.06'
-    elif config['TEACHER_MODEL'] == 'gpt-3.5-turbo':
-        default_input = '0.0015'
-        default_output = '0.002'
-    elif config['TEACHER_MODEL'] == 'claude-3-sonnet':
-        default_input = '0.015'
-        default_output = '0.075'
     else:
         default_input = '0.20'
         default_output = '0.50'
     
-    config['GROK_4_1_FAST_INPUT_PRICE'] = input(f"Input Price per 1K tokens [${default_input}]: ").strip() or default_input
-    config['GROK_4_1_FAST_OUTPUT_PRICE'] = input(f"Output Price per 1K tokens [${default_output}]: ").strip() or default_output
+    config['PRIMARY_INPUT_PRICE'] = input(f"Input Price per 1K tokens [${default_input}]: ").strip() or default_input
+    config['PRIMARY_OUTPUT_PRICE'] = input(f"Output Price per 1K tokens [${default_output}]: ").strip() or default_output
     
     print("\n🤗 HuggingFace Configuration:")
     config['HF_TOKEN'] = input(f"HuggingFace Token (optional) [{existing_env.get('HF_TOKEN', 'YOUR_HUGGINGFACE_TOKEN_HERE')}]: ").strip() or existing_env.get('HF_TOKEN', 'YOUR_HUGGINGFACE_TOKEN_HERE')
@@ -67,6 +62,9 @@ def setup_environment():
     config['TRAIN_STEPS'] = input(f"Training steps [{existing_env.get('TRAIN_STEPS', '500')}]: ").strip() or existing_env.get('TRAIN_STEPS', '500')
     config['BATCH_SIZE'] = input(f"Batch size [{existing_env.get('BATCH_SIZE', '1')}]: ").strip() or existing_env.get('BATCH_SIZE', '1')
     config['LEARNING_RATE'] = input(f"Learning rate [{existing_env.get('LEARNING_RATE', '2e-4')}]: ").strip() or existing_env.get('LEARNING_RATE', '2e-4')
+    
+    gen_only = input(f"Run in Data Generation Only mode? (y/N) [{existing_env.get('GENERATE_ONLY', 'false')}]: ").strip().lower()
+    config['GENERATE_ONLY'] = 'true' if gen_only in ['y', 'yes'] else 'false'
     
     print("\n🏗️ Infrastructure Configuration:")
     enable_mlflow = input(f"Enable MLflow? (Y/n) [{existing_env.get('ENABLE_MLFLOW', 'true')}]: ").strip().lower()
@@ -94,13 +92,14 @@ def setup_environment():
         f.write("# TEACHER API CONFIGURATION\n")
         f.write("# =============================================================================\n")
         f.write(f"TEACHER_API_KEY={config['TEACHER_API_KEY']}\n")
-        f.write(f"TEACHER_MODEL={config['TEACHER_MODEL']}\n\n")
+        f.write(f"TEACHER_MODEL={config['TEACHER_MODEL']}\n")
+        f.write(f"TEACHER_FAILBACK_MODEL={config['TEACHER_FAILBACK_MODEL']}\n\n")
         
         f.write("# =============================================================================\n")
         f.write("# PRICING CONFIGURATION\n")
         f.write("# =============================================================================\n")
-        f.write(f"GROK_4_1_FAST_INPUT_PRICE={config['GROK_4_1_FAST_INPUT_PRICE']}\n")
-        f.write(f"GROK_4_1_FAST_OUTPUT_PRICE={config['GROK_4_1_FAST_OUTPUT_PRICE']}\n\n")
+        f.write(f"GPT_5_3_CODEX_INPUT_PRICE={config['PRIMARY_INPUT_PRICE']}\n")
+        f.write(f"GPT_5_3_CODEX_OUTPUT_PRICE={config['PRIMARY_OUTPUT_PRICE']}\n\n")
         
         f.write("# =============================================================================\n")
         f.write("# HUGGINGFACE CONFIGURATION\n")
@@ -115,7 +114,8 @@ def setup_environment():
         f.write(f"SAMPLES_PER_ROUND={config['SAMPLES_PER_ROUND']}\n")
         f.write(f"TRAIN_STEPS={config['TRAIN_STEPS']}\n")
         f.write(f"BATCH_SIZE={config['BATCH_SIZE']}\n")
-        f.write(f"LEARNING_RATE={config['LEARNING_RATE']}\n\n")
+        f.write(f"LEARNING_RATE={config['LEARNING_RATE']}\n")
+        f.write(f"GENERATE_ONLY={config['GENERATE_ONLY']}\n\n")
         
         f.write("# =============================================================================\n")
         f.write("# INFRASTRUCTURE CONFIGURATION\n")

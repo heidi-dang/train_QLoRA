@@ -18,7 +18,8 @@ def get_user_input():
     # Teacher Model Configuration
     print("\n🤖 Teacher Model Configuration:")
     config['teacher_api_key'] = input("Enter Teacher API Key (Grok/OpenAI/Anthropic): ").strip()
-    config['teacher_model'] = input("Teacher model [grok-beta]: ").strip() or "grok-beta"
+    config['teacher_model'] = input("Primary Teacher model [github-copilot/gpt-5.3-codex]: ").strip() or "github-copilot/gpt-5.3-codex"
+    config['teacher_failback_model'] = input("Failback Teacher model [xai/grok-4-1-fast]: ").strip() or "xai/grok-4-1-fast"
     
     # Training Model Configuration
     print("\n🎯 Training Model Configuration:")
@@ -78,6 +79,7 @@ def setup_environment(config):
     env_vars = {
         'TEACHER_API_KEY': config.get('teacher_api_key'),
         'TEACHER_MODEL': config.get('teacher_model'),
+        'TEACHER_FAILBACK_MODEL': config.get('teacher_failback_model'),
         'BASE_MODEL': config.get('base_model'),
         'HF_TOKEN': config.get('hf_token'),
         'LANGUAGES': config.get('languages'),

@@ -143,8 +143,10 @@ ehthumbs.db
 Thumbs.db
 
 # AI Lab specific
-ai-lab/repos/
-ai-lab/datasets/raw/
-ai-lab/checkpoints/
-ai-lab/evaluation/
 *.pid
+state/STOP
+data/ai-lab/repos/
+data/ai-lab/datasets/raw/
+data/ai-lab/checkpoints/
+data/ai-lab/evaluation/
+data/ai-lab/logs/

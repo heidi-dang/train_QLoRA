@@ -223,10 +223,17 @@ def main_loop():
             auto_train_first = _safe_bool_env('AUTO_TRAIN_FIRST', True)
             min_samples_to_train = _safe_int_env('MIN_SAMPLES_TO_TRAIN', 200)
             target_buffer_samples = _safe_int_env('TARGET_BUFFER_SAMPLES', 500)
+            generate_only = _safe_bool_env('GENERATE_ONLY', False)
             clean_count = get_clean_sample_count(TRAIN_FILE)
 
             stages = []
-            if auto_train_first and clean_count >= min_samples_to_train:
+            if generate_only:
+                stages.extend([
+                    ("scrape", stage_scrape),
+                    ("generate", stage_generate),
+                    ("clean", stage_clean),
+                ])
+            elif auto_train_first and clean_count >= min_samples_to_train:
                 stages.extend([
                     ("train", lambda: stage_train(run_id, round_n)),
                     ("evaluate", lambda: stage_evaluate(run_id)),

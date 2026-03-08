@@ -36,7 +36,7 @@ from rich import box
 # Import Heidi Engine components
 try:
     from heidi_engine.dashboard import HeidiDashboard
-    from heidi_engine.telemetry import TelemetryEmitter, get_state, get_events
+    from dashboard import heidi_telemetry
     HEIDI_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Heidi Engine not available: {e}")
