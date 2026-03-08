@@ -385,12 +385,38 @@ class DataGenerationMonitor:
                 'input_price': float(ENV.get('GPT_3_5_TURBO_INPUT_PRICE', '0.0015')),
                 'output_price': float(ENV.get('GPT_3_5_TURBO_OUTPUT_PRICE', '0.002'))
             },
+            'gpt-5-mini': {
+                'input_price': float(ENV.get('GPT_5_MINI_INPUT_PRICE', '0.015')),
+                'output_price': float(ENV.get('GPT_5_MINI_OUTPUT_PRICE', '0.075'))
+            },
             'claude-3-sonnet': {
                 'input_price': float(ENV.get('CLAUDE_3_SONNET_INPUT_PRICE', '0.015')),
                 'output_price': float(ENV.get('CLAUDE_3_SONNET_OUTPUT_PRICE', '0.075'))
+            },
+            'copilot': {
+                'input_price': float(ENV.get('COPILOT_INPUT_PRICE', '0.015')),
+                'output_price': float(ENV.get('COPILOT_OUTPUT_PRICE', '0.075'))
+            },
+            'github-copilot': {
+                'input_price': float(ENV.get('COPILOT_INPUT_PRICE', '0.015')),
+                'output_price': float(ENV.get('COPILOT_OUTPUT_PRICE', '0.075'))
             }
         }
-        return pricing.get(model, pricing['grok-4-1-fast'])  # Default to grok pricing
+        return pricing.get(model, pricing['copilot'])  # Default to copilot pricing
+    
+    def _format_provider(self, provider: str) -> str:
+        """Format provider name for display."""
+        provider = provider.lower().strip()
+        if provider in ['copilot', 'github-copilot']:
+            return 'GitHub Copilot'
+        elif provider == 'openai':
+            return 'OpenAI'
+        elif provider == 'anthropic':
+            return 'Anthropic'
+        elif provider == 'xai':
+            return 'xAI'
+        else:
+            return provider.title() or 'Unknown'
         
     def get_generation_status(self) -> Dict[str, Any]:
         """Get data generation status."""
@@ -407,15 +433,15 @@ class DataGenerationMonitor:
             'progress_percent': (self.processed_samples / self.total_samples * 100) if self.total_samples > 0 else 0,
             'generation_stage': self.generation_stage,
             'samples_per_minute': self._calculate_generation_rate(),
-            'provider': ENV.get('TEACHER_PROVIDER', ''),
-            'model': ENV.get('TEACHER_MODEL', 'grok-4-1-fast'),
+            'provider': self._format_provider(ENV.get('TEACHER_PROVIDER', 'copilot')),
+            'model': ENV.get('TEACHER_MODEL', 'gpt-5-mini'),
             'prompt_tokens': self.prompt_tokens,
             'completion_tokens': self.completion_tokens,
             'total_tokens': self.total_tokens,
             'request_count': self.request_count,
             'total_cost': self.total_cost,
-            'input_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'grok-4-1-fast'))['input_price'],
-            'output_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'grok-4-1-fast'))['output_price']
+            'input_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'gpt-5-mini'))['input_price'],
+            'output_price': self.get_pricing(ENV.get('TEACHER_MODEL', 'gpt-5-mini'))['output_price']
         }
     
     def _load_from_telemetry(self) -> Dict[str, Any]:
@@ -429,7 +455,7 @@ class DataGenerationMonitor:
             
             usage = telemetry.get('usage', {})
 
-            model = usage.get('model') or ENV.get('TEACHER_MODEL', 'grok-4-1-fast')
+            model = usage.get('model') or ENV.get('TEACHER_MODEL', 'gpt-5-mini')
             pricing = self.get_pricing(model)
             prompt_tokens = int(usage.get('prompt_tokens', 0) or 0)
             completion_tokens = int(usage.get('completion_tokens', 0) or 0)
@@ -448,7 +474,7 @@ class DataGenerationMonitor:
                 'progress_percent': telemetry.get('overall_percent', 0) * 100,
                 'generation_stage': telemetry.get('current_stage', 'idle'),
                 'samples_per_minute': 0,
-                'provider': usage.get('provider', ENV.get('TEACHER_PROVIDER', '')),
+                'provider': self._format_provider(usage.get('provider', ENV.get('TEACHER_PROVIDER', 'copilot'))),
                 'model': model,
                 'prompt_tokens': prompt_tokens,
                 'completion_tokens': completion_tokens,
@@ -664,6 +690,24 @@ class Dashboard:
         table.add_row("Round", f"{training['current_round']}/{training['total_rounds']}")
         table.add_row("Step", f"{training['training_step']}/{training['total_steps']}")
         table.add_row("Progress", f"{training['progress_percent']:.1f}%")
+        
+        # Add countdown timer if training is active
+        if training.get('is_training') and training.get('training_speed', 0) > 0:
+            remaining_steps = training['total_steps'] - training['training_step']
+            if remaining_steps > 0:
+                eta_seconds = remaining_steps / training['training_speed']
+                eta_minutes = eta_seconds / 60
+                eta_hours = eta_minutes / 60
+                
+                if eta_hours >= 1:
+                    eta_text = f"{eta_hours:.1f}h"
+                elif eta_minutes >= 1:
+                    eta_text = f"{eta_minutes:.1f}m"
+                else:
+                    eta_text = f"{eta_seconds:.0f}s"
+                
+                table.add_row("ETA", eta_text)
+        
         table.add_row("Loss", f"{float(training.get('training_loss', 0) or 0):.4f}")
         table.add_row("Learning Rate", f"{float(training.get('learning_rate', 0) or 0):.2e}")
         
