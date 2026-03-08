@@ -161,7 +161,7 @@ def main_loop():
                 bar_len = 20
                 filled = int(bar_len * i // len(stages))
                 bar = '█' * filled + '░' * (bar_len - filled)
-                print(f'\rRound {round_n} [{i}/5] |{bar}| {pct:.0f}% | {name}', end='', flush=True)
+                print(f'\rRound {round_n} [{i}/5] |{bar}| {pct:.3f}% | {name}', end='', flush=True)
                 func()
             print(f'\nRound {round_n} complete')
             # MLflow logging: read evaluation results and log metrics

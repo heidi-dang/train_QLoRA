@@ -125,6 +125,10 @@ class TrainingMonitor:
         # Check telemetry first
         telemetry_status = self._load_from_telemetry()
         if telemetry_status:
+            # Telemetry currently doesn't carry loss/LR; enrich from logs so the UI is live.
+            self._update_from_logs()
+            telemetry_status['training_loss'] = self.training_loss[-1] if self.training_loss else 0
+            telemetry_status['learning_rate'] = self.learning_rate
             return telemetry_status
             
         # Fallback to log parsing
@@ -180,6 +184,10 @@ class TrainingMonitor:
             with open(TELEMETRY_FILE, 'r') as f:
                 telemetry = json.load(f)
             
+            current_stage = (telemetry.get('current_stage', '') or '').lower()
+            status = (telemetry.get('status', 'idle') or 'idle').lower()
+            is_training = status in ['running', 'training'] or ('train' in current_stage)
+
             return {
                 'current_round': telemetry.get('stage_index', 0),
                 'training_step': telemetry.get('completed_units', 0),
@@ -189,14 +197,14 @@ class TrainingMonitor:
                 'learning_rate': 2e-4,  # Default
                 'start_time': None,
                 'estimated_completion': None,
-                'is_training': telemetry.get('status') in ['running', 'training'],
+                'is_training': is_training,
                 'total_rounds': telemetry.get('total_stages', 10),
                 'round_progress': telemetry.get('stage_percent', 0) * 100,
                 'training_speed': 0,
                 'samples_processed': telemetry.get('completed_units', 0),
                 'total_samples': telemetry.get('total_units', 100),
-                'current_stage': telemetry.get('current_stage', ''),
-                'status': telemetry.get('status', 'idle')
+                'current_stage': current_stage,
+                'status': status,
             }
         except Exception:
             return None
@@ -204,9 +212,16 @@ class TrainingMonitor:
     def _is_training_active(self) -> bool:
         """Check if training is currently active."""
         try:
+            # Check for train_loop.py process
             result = subprocess.run(['pgrep', '-f', 'train_loop.py'], 
-                                capture_output=True)
-            return result.returncode == 0
+                                capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip():
+                return True
+                
+            # Also check for train_q_lora.py process
+            result = subprocess.run(['pgrep', '-f', 'train_q_lora.py'], 
+                                capture_output=True, text=True)
+            return result.returncode == 0 and result.stdout.strip()
         except Exception:
             return False
     
@@ -228,24 +243,32 @@ class TrainingMonitor:
                         self.current_round = int(round_match.group(1))
                         self.total_rounds = int(round_match.group(2))
                 
-                # Parse step progress
+                # Parse step progress (older format)
                 if 'Step' in line and '/' in line:
                     step_match = re.search(r'Step (\d+)/(\d+)', line)
                     if step_match:
                         self.training_step = int(step_match.group(1))
                         self.total_steps = int(step_match.group(2))
                 
-                # Parse loss
-                if 'loss:' in line.lower():
-                    loss_match = re.search(r'loss[:\s]+([\d.]+)', line)
+                # Parse loss (new format from training logs)
+                if "'loss':" in line:
+                    loss_match = re.search(r"'loss':\s*'([0-9.]+)'", line)
                     if loss_match:
-                        self.training_loss.append(float(loss_match.group(1)))
+                        loss_value = float(loss_match.group(1))
+                        self.training_loss.append(loss_value)
                         if len(self.training_loss) > 100:
                             self.training_loss.pop(0)
                 
-                # Parse learning rate
-                if 'lr:' in line.lower():
-                    lr_match = re.search(r'lr[:\s]+([\d.e-]+)', line)
+                # Parse step progress (new format)
+                if "|" in line and "/" in line and "%" in line:
+                    step_match = re.search(r'\|\s*([0-9]+)/([0-9]+)\s*\|', line)
+                    if step_match:
+                        self.training_step = int(step_match.group(1))
+                        self.total_steps = int(step_match.group(2))
+                
+                # Parse learning rate (new format)
+                if "'learning_rate':" in line:
+                    lr_match = re.search(r"'learning_rate':\s*'([0-9.e-]+)'", line)
                     if lr_match:
                         self.learning_rate = float(lr_match.group(1))
         
@@ -262,17 +285,41 @@ class LoRAMonitor:
         self.total_params = 0
         
     def get_lora_info(self) -> Dict[str, Any]:
-        """Get LoRA adapter information."""
+        """Get QLoRA adapter information."""
+        # Read from environment first
+        try:
+            if os.path.exists('.env'):
+                with open('.env', 'r') as f:
+                    env_content = f.read()
+                    
+                # Parse QLoRA config from env
+                r_match = re.search(r'QLORA_R=([0-9]+)', env_content)
+                alpha_match = re.search(r'QLORA_ALPHA=([0-9]+)', env_content)
+                dropout_match = re.search(r'QLORA_DROPOUT=([0-9.]+)', env_content)
+                
+                if r_match:
+                    self.lora_config['r'] = int(r_match.group(1))
+                if alpha_match:
+                    self.lora_config['alpha'] = int(alpha_match.group(1))
+                if dropout_match:
+                    self.lora_config['dropout'] = float(dropout_match.group(1))
+        except Exception:
+            pass
+        
         # Try to read from latest checkpoint
         checkpoints = list(Path(CHECKPOINTS_DIR).glob('adapter_round_*'))
         if checkpoints:
             latest_checkpoint = max(checkpoints, key=os.path.getctime)
             self._load_lora_info(latest_checkpoint)
         
+        # Fallback to defaults if not found
+        if not self.lora_config:
+            self.lora_config = {'r': 64, 'alpha': 16, 'dropout': 0.1}
+        
         return {
-            'lora_r': self.lora_config.get('r', 0),
-            'lora_alpha': self.lora_config.get('alpha', 0),
-            'lora_dropout': self.lora_config.get('dropout', 0),
+            'lora_r': self.lora_config.get('r', 64),
+            'lora_alpha': self.lora_config.get('alpha', 16),
+            'lora_dropout': self.lora_config.get('dropout', 0.1),
             'adapter_size_mb': self.adapter_size,
             'trainable_params': self.trainable_params,
             'total_params': self.total_params,
@@ -547,7 +594,7 @@ class Dashboard:
         layout.split_column(
             Layout(name="header", size=3),
             Layout(name="main"),
-            Layout(name="footer", size=20)
+            Layout(name="footer", size=24)
         )
         
         layout["main"].split_row(
@@ -559,11 +606,17 @@ class Dashboard:
             Layout(name="resources", size=12),
             Layout(name="training", size=12)
         )
-        
+
         layout["right"].split_column(
             Layout(name="lora", size=8),
             Layout(name="data_gen", size=8),
             Layout(name="progress", size=8)
+        )
+
+        # Full-width realtime logs split into 2 panels
+        layout["footer"].split_row(
+            Layout(name="training_logs"),
+            Layout(name="other_logs"),
         )
         
         return layout
@@ -604,12 +657,15 @@ class Dashboard:
         table.add_column("Metric", style="cyan")
         table.add_column("Value", style="white")
         
-        table.add_row("Status", "🟢 Training" if training['is_training'] else "⚪ Idle")
+        status_text = "[dim]⚪ Idle[/dim]"
+        if training.get('is_training'):
+            status_text = "[green]🟢 Training[/green]"
+        table.add_row("Status", status_text)
         table.add_row("Round", f"{training['current_round']}/{training['total_rounds']}")
         table.add_row("Step", f"{training['training_step']}/{training['total_steps']}")
         table.add_row("Progress", f"{training['progress_percent']:.1f}%")
-        table.add_row("Loss", f"{training['training_loss']:.4f}")
-        table.add_row("Learning Rate", f"{training['learning_rate']:.2e}")
+        table.add_row("Loss", f"{float(training.get('training_loss', 0) or 0):.4f}")
+        table.add_row("Learning Rate", f"{float(training.get('learning_rate', 0) or 0):.2e}")
         
         if training['training_speed'] > 0:
             table.add_row("Speed", f"{training['training_speed']:.2f} steps/s")
@@ -630,7 +686,7 @@ class Dashboard:
         table.add_row("Size", f"{lora['adapter_size_mb']:.1f}MB")
         table.add_row("Trainable", f"{lora['trainable_percent']:.1f}%")
         
-        return Panel(table, title="🔧 LoRA", border_style="magenta")
+        return Panel(table, title="🔧 QLoRA", border_style="magenta")
     
     def create_data_gen_panel(self) -> Panel:
         """Create data generation panel."""
@@ -690,13 +746,21 @@ class Dashboard:
         
         return Panel(progress, title="📈 Overall Progress", border_style="cyan")
     
-    def create_logs_panel(self, log_source: str = 'loop') -> Panel:
+    def create_logs_panel(self, log_source: str = 'loop', title: str = '📋 Real-time Logs', filter_mode: str = '') -> Panel:
         """Create real-time logs panel."""
-        logs = self.log_monitor.get_recent_logs(log_source, lines=30)
+        logs = self.log_monitor.get_recent_logs(log_source, lines=25)
+
+        if filter_mode == 'training':
+            filtered = []
+            for line in logs:
+                u = line.upper()
+                if ('%|' in line) or ("'LOSS':" in u) or ("'LEARNING_RATE':" in u) or ('ROUND' in u) or ('STEP' in u):
+                    filtered.append(line)
+            logs = filtered[-25:] if filtered else logs[-25:]
         
         # Format logs with colors based on content
         formatted_logs = []
-        for log in logs[-30:]:
+        for log in logs[-25:]:
             if 'ERROR' in log.upper():
                 formatted_logs.append(f"[red]{log}[/red]")
             elif 'WARNING' in log.upper():
@@ -707,7 +771,7 @@ class Dashboard:
                 formatted_logs.append(f"[dim]{log}[/dim]")
         
         log_text = "\n".join(formatted_logs)
-        return Panel(log_text, title=f"📋 Real-time Logs ({log_source})", border_style="white")
+        return Panel(log_text, title=title, border_style="white")
     
     def update(self):
         """Update all monitors with caching."""
@@ -740,11 +804,10 @@ class Dashboard:
         layout["right"]["lora"].update(self.create_lora_panel())
         layout["right"]["data_gen"].update(self.create_data_gen_panel())
         layout["right"]["progress"].update(self.create_progress_panel())
-        
-        # Pin to a single log source to avoid jumping around
-        log_sources = {'loop', 'api', 'mlflow', 'tb', 'dashboard'}
-        log_source = DEFAULT_LOG_SOURCE if DEFAULT_LOG_SOURCE in log_sources else 'loop'
-        layout["footer"].update(self.create_logs_panel(log_source))
+
+        # Two pinned log sources (no auto-cycling)
+        layout["footer"]["training_logs"].update(self.create_logs_panel('loop', '🎯 Training % / Progress', filter_mode='training'))
+        layout["footer"]["other_logs"].update(self.create_logs_panel('api', '📋 Other Logs (API)'))
         
         return layout
     
