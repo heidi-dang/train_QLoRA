@@ -358,7 +358,7 @@ class DataGenerationMonitor:
             'progress_percent': (self.processed_samples / self.total_samples * 100) if self.total_samples > 0 else 0,
             'generation_stage': self.generation_stage,
             'samples_per_minute': self._calculate_generation_rate(),
-            'provider': ENV.get('TEACHER_MODEL', 'grok-4-1-fast'),
+            'provider': ENV.get('TEACHER_PROVIDER', ''),
             'model': ENV.get('TEACHER_MODEL', 'grok-4-1-fast'),
             'prompt_tokens': self.prompt_tokens,
             'completion_tokens': self.completion_tokens,
@@ -379,16 +379,35 @@ class DataGenerationMonitor:
                 telemetry = json.load(f)
             
             usage = telemetry.get('usage', {})
+
+            model = usage.get('model') or ENV.get('TEACHER_MODEL', 'grok-4-1-fast')
+            pricing = self.get_pricing(model)
+            prompt_tokens = int(usage.get('prompt_tokens', 0) or 0)
+            completion_tokens = int(usage.get('completion_tokens', 0) or 0)
+            total_tokens = int(usage.get('total_tokens', prompt_tokens + completion_tokens) or 0)
+            request_count = int(usage.get('request_count', 0) or 0)
+            spend_usd = float(usage.get('spend_usd', 0.0) or 0.0)
+
+            # If telemetry doesn't have spend, compute it from env pricing.
+            # Pricing values are per 1K tokens.
+            if spend_usd <= 0.0 and (prompt_tokens > 0 or completion_tokens > 0):
+                spend_usd = (prompt_tokens / 1000.0) * pricing['input_price'] + (completion_tokens / 1000.0) * pricing['output_price']
+
             return {
                 'total_samples': telemetry.get('total_units', 100),
                 'processed_samples': telemetry.get('completed_units', 0),
                 'progress_percent': telemetry.get('overall_percent', 0) * 100,
                 'generation_stage': telemetry.get('current_stage', 'idle'),
                 'samples_per_minute': 0,
-                'provider': usage.get('provider', ''),
-                'model': usage.get('model', ''),
-                'total_tokens': usage.get('total_tokens', 0),
-                'spend_usd': usage.get('spend_usd', 0.0)
+                'provider': usage.get('provider', ENV.get('TEACHER_PROVIDER', '')),
+                'model': model,
+                'prompt_tokens': prompt_tokens,
+                'completion_tokens': completion_tokens,
+                'total_tokens': total_tokens,
+                'request_count': request_count,
+                'input_price': pricing['input_price'],
+                'output_price': pricing['output_price'],
+                'total_cost': spend_usd
             }
         except Exception:
             return None
@@ -409,7 +428,7 @@ class DataGenerationMonitor:
                 elif 'Generated' in line and 'samples' in line:
                     sample_match = re.search(r'Generated[:\s]+(\d+)', line)
                     if sample_match:
-                        self.processed_samples = int(sample_match.group(1)))
+                        self.processed_samples = int(sample_match.group(1))
                 elif 'tokens' in line.lower() and ('prompt' in line.lower() or 'completion' in line.lower()):
                     # Extract token usage from logs
                     if 'prompt tokens:' in line.lower():

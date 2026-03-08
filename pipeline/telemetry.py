@@ -11,7 +11,11 @@ TELEMETRY_FILE = os.path.join(ROOT, 'state', 'telemetry.json')
 
 PRICING = {
     "grok-beta": {"prompt": 0.0000025, "completion": 0.00001},
-    "grok-4-1-fast": {"prompt": 0.000003, "completion": 0.000015},
+    # Default pricing (USD per token). Can be overridden via env:
+    # - GROK_4_1_FAST_INPUT_PRICE  (USD per 1K prompt tokens)
+    # - GROK_4_1_FAST_OUTPUT_PRICE (USD per 1K completion tokens)
+    # Requested: input=$0.20/1K, output=$0.50/1K
+    "grok-4-1-fast": {"prompt": 0.0002, "completion": 0.0005},
     "grok-4-fast": {"prompt": 0.000003, "completion": 0.000015},
     "gpt-4": {"prompt": 0.00003, "completion": 0.00006},
     "gpt-4o": {"prompt": 0.0000025, "completion": 0.00001},
@@ -127,6 +131,15 @@ def record_api_call(provider: str, model: str, prompt_tokens: int = 0,
 
 
 def _calculate_spend(model: str, prompt_tokens: int, completion_tokens: int) -> float:
+    # Optional env overrides (USD per 1K tokens)
+    if model and "grok-4-1-fast" in model.lower():
+        try:
+            in_per_1k = float(os.environ.get("GROK_4_1_FAST_INPUT_PRICE", ""))
+            out_per_1k = float(os.environ.get("GROK_4_1_FAST_OUTPUT_PRICE", ""))
+            return (prompt_tokens / 1000.0) * in_per_1k + (completion_tokens / 1000.0) * out_per_1k
+        except Exception:
+            pass
+
     model_key = model.lower().replace("-", "_").replace(".", "_")
     for key, prices in PRICING.items():
         if key.lower().replace("-", "_").replace(".", "_") in model_key:
