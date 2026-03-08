@@ -35,7 +35,9 @@ echo "✅ Environment setup complete!"
 
 # Load configuration if exists
 if [ -f "$ROOT/.env" ]; then
-  export $(cat "$ROOT/.env" | xargs)
+  set -a
+  source "$ROOT/.env"
+  set +a
 fi
 
 VENV_UVICORN="$VENV/bin/uvicorn"
@@ -120,7 +122,9 @@ case $CMD in
     
     # Load configuration
     if [ -f "$ROOT/.env" ]; then
-      export $(cat "$ROOT/.env" | xargs)
+      set -a
+      source "$ROOT/.env"
+      set +a
     fi
     
     # Clear stale STOP
