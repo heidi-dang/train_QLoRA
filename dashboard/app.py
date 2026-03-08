@@ -250,6 +250,21 @@ class TrainingMonitor:
             with open(log_file, 'r') as f:
                 lines = f.readlines()[-100:]  # Last 100 lines
             
+            # Prefer a single authoritative tqdm progress line to avoid UI jumping
+            # when multiple progress bars exist in the log (e.g. 55/500 and 60/2000).
+            candidates = []
+
+            preferred_total = None
+            if os.path.exists(ENV_FILE):
+                try:
+                    with open(ENV_FILE, 'r') as f:
+                        env_txt = f.read()
+                    ts = re.search(r'^\s*TRAIN_STEPS\s*=\s*([0-9]+)\s*$', env_txt, flags=re.MULTILINE)
+                    if ts:
+                        preferred_total = int(ts.group(1))
+                except Exception:
+                    preferred_total = None
+
             for line in lines:
                 s = line.strip()
 
@@ -257,15 +272,13 @@ class TrainingMonitor:
                 #  10%|█         | 55/500 [04:21<35:18,  4.76s/it]
                 if '%|' in s and '/' in s and 's/it' in s:
                     m = re.search(r'\|\s*(\d+)\/(\d+)\s*\[', s)
-                    if m:
-                        self.training_step = int(m.group(1))
-                        self.total_steps = int(m.group(2))
-
                     it = re.search(r'([0-9]+\.?[0-9]*)s\/it', s)
-                    if it:
+                    if m and it:
+                        step = int(m.group(1))
+                        total = int(m.group(2))
                         sec_per_it = float(it.group(1))
-                        if sec_per_it > 0:
-                            self.training_speed = 1.0 / sec_per_it
+                        speed = (1.0 / sec_per_it) if sec_per_it > 0 else 0.0
+                        candidates.append((total, step, speed))
 
                 # Parse training progress
                 if 'Round' in line and '/' in line:
@@ -313,6 +326,23 @@ class TrainingMonitor:
                         self.total_steps = int(ts.group(1))
                 except Exception:
                     pass
+
+            # Apply best tqdm candidate after scanning all lines.
+            if candidates:
+                # Choose the most recent candidate with preferred_total if available,
+                # otherwise choose most recent candidate with the largest total.
+                if preferred_total:
+                    preferred = [c for c in candidates if c[0] == preferred_total]
+                    chosen_total, chosen_step, chosen_speed = (preferred[-1] if preferred else max(candidates, key=lambda x: x[0]))
+                else:
+                    max_total = max(c[0] for c in candidates)
+                    max_candidates = [c for c in candidates if c[0] == max_total]
+                    chosen_total, chosen_step, chosen_speed = max_candidates[-1]
+
+                self.total_steps = chosen_total
+                self.training_step = chosen_step
+                if chosen_speed > 0:
+                    self.training_speed = chosen_speed
 
             # If rounds aren't logged, infer current round from latest adapter checkpoint
             if self.total_rounds <= 0:
