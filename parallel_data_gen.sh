@@ -156,7 +156,17 @@ LANGS = [l.strip() for l in os.environ.get("PARALLEL_DATA_GEN_LANGS", "").split(
 from github_search import GitHubSearcher
 
 searcher = GitHubSearcher()
-repos = searcher.search_repos(query=QUERY, languages=LANGS)
+MIN_STARS = int(os.environ.get("MIN_STARS", "1") or 1)
+MIN_FORKS = int(os.environ.get("MIN_FORKS", "0") or 0)
+MAX_REPOS = int(os.environ.get("MAX_REPOS", "25") or 25)
+
+repos = searcher.search_repos(
+  query=QUERY,
+  languages=LANGS,
+  min_stars=MIN_STARS,
+  min_forks=MIN_FORKS,
+  max_results=MAX_REPOS,
+)
 searcher.save_repo_list(repos, REPO_LIST)
 
 # 2) Scrape repos (clone/update) + create filelist, with custom dirs
