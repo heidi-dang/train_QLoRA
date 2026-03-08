@@ -133,6 +133,10 @@ class TrainingMonitor:
         if telemetry_status:
             # Telemetry may be stale; enrich/override from logs and process detection.
             telemetry_status['is_training'] = bool(telemetry_status.get('is_training')) or is_active
+            if self.current_round > 0:
+                telemetry_status['current_round'] = self.current_round
+            if self.total_rounds > 0:
+                telemetry_status['total_rounds'] = max(int(telemetry_status.get('total_rounds', 0) or 0), self.total_rounds)
             telemetry_status['training_loss'] = self.training_loss[-1] if self.training_loss else 0
             telemetry_status['learning_rate'] = self.learning_rate
             if self.total_steps > 0:
@@ -757,7 +761,11 @@ class Dashboard:
         table.add_row("CPU Usage", f"{resources['cpu_percent']:.1f}%")
         table.add_row("Memory", f"{resources['memory_used_gb']:.1f}/{resources['memory_total_gb']:.1f}GB ({resources['memory_percent']:.1f}%)")
         table.add_row("Disk", f"{resources['disk_usage']:.1f}%")
-        table.add_row("Uptime", f"{resources['uptime_hours']:.1f}h")
+        uptime_hours = float(resources.get('uptime_hours', 0) or 0)
+        if uptime_hours < 1.0:
+            table.add_row("Uptime", f"{uptime_hours * 60:.0f}m")
+        else:
+            table.add_row("Uptime", f"{uptime_hours:.1f}h")
         
         if resources.get('gpu_utilization', 0) > 0:
             table.add_row("GPU", f"{resources['gpu_utilization']:.1f}%")
