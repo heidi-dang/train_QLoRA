@@ -902,7 +902,7 @@ class Dashboard:
                     if self.should_reload():
                         print("[green]🔄 Hot-reloading dashboard...[/green]")
                         # Re-import and recreate dashboard
-                        import import importlib
+                        import importlib
                         import sys
                         
                         # Clear module cache
