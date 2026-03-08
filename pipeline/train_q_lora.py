@@ -22,7 +22,9 @@ try:
         AutoModelForCausalLM,
         BitsAndBytesConfig,
         TrainingArguments,
-        DataCollatorForLanguageModeling
+        DataCollatorForLanguageModeling,
+        TrainerCallback,
+        EarlyStoppingCallback
     )
     from peft import LoraConfig, get_peft_model, TaskType
     from trl import SFTTrainer
@@ -47,13 +49,74 @@ def load_config() -> Dict[str, Any]:
         'base_model': os.environ.get('BASE_MODEL', 'mistralai/Mistral-7B-Instruct-v0.2'),
         'hf_token': os.environ.get('HF_TOKEN', ''),
         'batch_size': int(os.environ.get('BATCH_SIZE', '1')),
+        'grad_accum': int(os.environ.get('GRAD_ACCUM', '8')),
         'learning_rate': float(os.environ.get('LEARNING_RATE', '2e-4')),
         'train_steps': int(os.environ.get('TRAIN_STEPS', '500')),
+        'eval_steps': int(os.environ.get('EVAL_STEPS', '50')),
+        'save_steps': int(os.environ.get('SAVE_STEPS', '50')),
+        'max_seq_length': int(os.environ.get('MAX_SEQ_LENGTH', '2048')),
         'r': int(os.environ.get('QLORA_R', '64')),
         'alpha': int(os.environ.get('QLORA_ALPHA', '16')),
         'dropout': float(os.environ.get('QLORA_DROPOUT', '0.05')),
-        'enable_mlflow': os.environ.get('ENABLE_MLFLOW', 'true').lower() == 'true'
+        'enable_mlflow': os.environ.get('ENABLE_MLFLOW', 'true').lower() == 'true',
+        'val_set_size': float(os.environ.get('VAL_SET_SIZE', '0.05'))
     }
+
+def get_device_info():
+    """Determine GPU capabilities and select optimal dtype."""
+    if not torch.cuda.is_available():
+        return "cpu", torch.float32, False
+    
+    gpu_name = torch.cuda.get_device_name(0)
+    # A100, H100, L40, RTX 30/40 series support bf16
+    # 2080 Ti (Turing) does NOT support bf16 efficiently
+    supports_bf16 = torch.cuda.is_bf16_supported()
+    
+    # User's 2080 Ti is Turing (Compute 7.5), No native bfloat16
+    # A100/H100 are Compute 8.0+
+    if supports_bf16 and ("A100" in gpu_name or "H100" in gpu_name or "A800" in gpu_name):
+        return gpu_name, torch.bfloat16, True
+    else:
+        return gpu_name, torch.float16, False
+
+def preflight_checks(config: Dict[str, Any], train_file: str):
+    """Verify system readiness before starting training."""
+    logging.info("Running preflight checks...")
+    
+    # 1. Dataset existence
+    if not os.path.exists(train_file):
+        raise FileNotFoundError(f"Dataset not found at {train_file}")
+    
+    # 2. Dataset row count
+    try:
+        with open(train_file, 'r') as f:
+            data = json.load(f)
+            if not isinstance(data, list) or len(data) == 0:
+                raise ValueError("Dataset is empty or not a list")
+            logging.info(f"Verified dataset has {len(data)} samples")
+    except Exception as e:
+        raise ValueError(f"Failed to read dataset: {e}")
+
+    # 3. GPU/VRAM check
+    if not torch.cuda.is_available():
+        logging.warning("No GPU detected! This will be extremely slow.")
+    else:
+        gpu_name, dtype, is_bf16 = get_device_info()
+        vram_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+        logging.info(f"Found GPU: {gpu_name} with {vram_gb:.1f}GB VRAM")
+        logging.info(f"Using dtype: {dtype} (bf16={is_bf16})")
+        
+        if vram_gb < 8:
+            logging.warning("Low VRAM detected. Training might fail.")
+            
+    # 4. Disk space check
+    import shutil
+    usage = shutil.disk_usage(AI_LAB)
+    free_gb = usage.free / 1e9
+    if free_gb < 5:
+        raise RuntimeError(f"Low disk space: {free_gb:.1f}GB remaining in {AI_LAB}")
+    
+    logging.info("Preflight checks passed.")
 
 def setup_huggingface_token(token: str):
     """Setup HuggingFace token for model access."""
@@ -88,14 +151,14 @@ def load_model_and_tokenizer(model_name: str, hf_token: str = None):
     
     logging.info(f"Loading model {model_name}...")
 
-    model = None
-    last_err: Optional[Exception] = None
+    gpu_name, compute_dtype, use_bf16 = get_device_info()
+    
     try:
-        logging.info("Attempting 4-bit quantized load...")
+        logging.info(f"Attempting 4-bit quantized load with {compute_dtype}...")
         bnb_config = BitsAndBytesConfig(
-            load_in_4_bit=True,
+            load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=True
         )
         model = AutoModelForCausalLM.from_pretrained(
@@ -106,26 +169,10 @@ def load_model_and_tokenizer(model_name: str, hf_token: str = None):
             trust_remote_code=True
         )
         logging.info("4-bit quantized load successful")
-    except TypeError as e:
-        last_err = e
-        logging.warning(f"4-bit load failed due to TypeError: {e}")
     except Exception as e:
-        last_err = e
-        logging.warning(f"4-bit load failed due to Exception: {e}")
-
-    if model is None:
-        logging.warning(f"4-bit load failed, falling back to non-quantized model load: {last_err}")
-        try:
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                token=hf_token if hf_token else None,
-                device_map="auto",
-                trust_remote_code=True
-            )
-            logging.info("Non-quantized model load successful")
-        except Exception as e:
-            logging.error(f"Failed to load model even without quantization: {e}")
-            raise e
+        logging.error(f"4-bit load failed: {e}")
+        logging.error("Falling back to full non-quantized load is DISABLED to prevent VRAM explosion.")
+        raise RuntimeError(f"Failed to load quantized model: {e}")
     
     return model, tokenizer
 
@@ -147,8 +194,8 @@ def setup_lora(model, config: Dict[str, Any]):
     model.print_trainable_parameters()
     return model
 
-def load_training_data(train_file: str, tokenizer):
-    """Load and prepare training dataset."""
+def load_training_data(train_file: str, tokenizer, config: Dict[str, Any]):
+    """Load and prepare training dataset with validation split."""
     if not os.path.exists(train_file):
         raise FileNotFoundError(f"Training file not found: {train_file}")
     
@@ -158,48 +205,88 @@ def load_training_data(train_file: str, tokenizer):
         logging.error(f"Failed to load dataset: {e}")
         raise
     
+    # Split into train/validation
+    val_size = config.get('val_set_size', 0.05)
+    if val_size > 0:
+        dataset = dataset.train_test_split(test_size=val_size)
+        train_data = dataset['train']
+        eval_data = dataset['test']
+    else:
+        train_data = dataset
+        eval_data = None
+
     def format_example(example):
         """Format training example for instruction following."""
-        if 'instruction' in example and 'response' in example:
-            context = example.get('context', '')
-            if context:
-                text = f"### Context:\n{context}\n\n### Instruction:\n{example['instruction']}\n\n### Response:\n{example['response']}"
-            else:
-                text = f"### Instruction:\n{example['instruction']}\n\n### Response:\n{example['response']}"
+        # Normalize whitespace and ensure it ends with EOS
+        instruction = example.get('instruction', '').strip()
+        response = example.get('response', '').strip()
+        context = example.get('context', '').strip()
+
+        if not instruction or not response:
+            return {'text': ''} # Filtered later
+
+        if context:
+            text = f"### Context:\n{context}\n\n### Instruction:\n{instruction}\n\n### Response:\n{response}"
         else:
-            # Fallback for different format
-            text = str(example)
+            text = f"### Instruction:\n{instruction}\n\n### Response:\n{response}"
         
+        if not text.endswith(tokenizer.eos_token):
+            text += tokenizer.eos_token
+            
         return {'text': text}
     
-    dataset = dataset.map(format_example)
-    return dataset
+    train_data = train_data.map(format_example)
+    if eval_data:
+        eval_data = eval_data.map(format_example)
 
-def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: str):
+    # Filter out broken samples
+    train_data = train_data.filter(lambda x: len(x['text']) > 0)
+    if eval_data:
+        eval_data = eval_data.filter(lambda x: len(x['text']) > 0)
+
+    return train_data, eval_data
+
+def train_model(model, tokenizer, train_data, eval_data, config: Dict[str, Any], output_dir: str):
     """Train the model using SFTTrainer."""
     if not ML_DEPENDENCIES:
         raise ImportError("ML dependencies not available")
     
-    setup_lora(model, config)
+    # setup_lora(model, config) # REMOVED: Called in real_train once.
+
+    _, _, use_bf16 = get_device_info()
     
+    resume_from_checkpoint = os.environ.get('RESUME_FROM_CHECKPOINT', None)
+    if resume_from_checkpoint == "True":
+        resume_from_checkpoint = True
+    elif resume_from_checkpoint == "False":
+        resume_from_checkpoint = False
+
     # Training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
         per_device_train_batch_size=config['batch_size'],
-        gradient_accumulation_steps=max(1, 8 // config['batch_size']),
+        gradient_accumulation_steps=config['grad_accum'],
         learning_rate=config['learning_rate'],
         logging_steps=10,
-        save_steps=100,
+        save_steps=config['save_steps'],
+        eval_steps=config['eval_steps'],
         save_total_limit=3,
         max_steps=config['train_steps'],
-        bf16=True,
-        optim="paged_adamw_32bit",
+        bf16=use_bf16,
+        fp16=not use_bf16,
+        optim="paged_adamw_8bit",
         lr_scheduler_type="cosine",
         warmup_ratio=0.03,
         report_to=["tensorboard", "mlflow"] if config.get('enable_mlflow') else "tensorboard",
-        logging_dir=os.path.join(AI_LAB, 'logs'),
+        logging_dir=os.path.join(output_dir, 'logs'), # Run-scoped
         remove_unused_columns=False,
-        resume_from_checkpoint=True,
+        resume_from_checkpoint=resume_from_checkpoint,
+        gradient_checkpointing=True,
+        group_by_length=True,
+        evaluation_strategy="steps" if eval_data else "no",
+        load_best_model_at_end=True if eval_data else False,
+        metric_for_best_model="eval_loss" if eval_data else None,
+        greater_is_better=False,
     )
     
     # Data collator
@@ -219,9 +306,11 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
 
     common_kwargs = {
         "model": model,
-        "train_dataset": dataset,
+        "train_dataset": train_data,
+        "eval_dataset": eval_data,
         "args": training_args,
         "data_collator": data_collator,
+        "callbacks": [EarlyStoppingCallback(early_stopping_patience=3)] if eval_data else [],
     }
 
     # Only add parameters that are actually supported
@@ -282,7 +371,8 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
         # Try with minimal parameters
         minimal_kwargs = {
             "model": model,
-            "train_dataset": dataset,
+            "train_dataset": train_data,
+            "eval_dataset": eval_data,
             "args": training_args,
         }
         if "processing_class" in supported_params:
@@ -316,6 +406,10 @@ def real_train(train_file: str, output_dir: str):
     try:
         # Load configuration
         config = load_config()
+        
+        # Preflight checks
+        preflight_checks(config, train_file)
+        
         logging.info(f"Training with config: {config}")
         
         # Setup MLflow if enabled
@@ -334,16 +428,37 @@ def real_train(train_file: str, output_dir: str):
         model = setup_lora(model, config)
         
         # Load data
-        dataset = load_training_data(train_file, tokenizer)
-        logging.info(f"Loaded {len(dataset)} training examples")
+        train_data, eval_data = load_training_data(train_file, tokenizer, config)
+        logging.info(f"Loaded {len(train_data)} training and {len(eval_data) if eval_data else 0} eval examples")
         
         # Train
-        trainer = train_model(model, tokenizer, dataset, config, output_dir)
+        trainer = train_model(model, tokenizer, train_data, eval_data, config, output_dir)
         
+        # Save run metadata
+        gpu_name, dtype, _ = get_device_info()
+        metadata = {
+            "base_model": config['base_model'],
+            "dataset_path": train_file,
+            "sample_count": len(train_data),
+            "train_steps": config['train_steps'],
+            "learning_rate": config['learning_rate'],
+            "lora_r": config['r'],
+            "lora_alpha": config['alpha'],
+            "gpu_name": gpu_name,
+            "dtype": str(dtype),
+            "final_loss": trainer.state.log_history[-1].get('train_loss', 0) if trainer.state.log_history else 0,
+            "best_eval_loss": trainer.state.best_metric if eval_data else None
+        }
+        
+        with open(os.path.join(output_dir, 'run_metadata.json'), 'w') as f:
+            json.dump(metadata, f, indent=4)
+            
         # Log final metrics
         if config.get('enable_mlflow'):
-            final_loss = trainer.state.log_history[-1].get('train_loss', 0)
+            final_loss = metadata['final_loss']
             mlflow.log_metric("final_train_loss", final_loss)
+            if eval_data:
+                mlflow.log_metric("best_eval_loss", metadata['best_eval_loss'])
             mlflow.log_artifacts(output_dir, artifact_path="model")
             mlflow.end_run()
         
