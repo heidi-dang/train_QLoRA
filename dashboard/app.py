@@ -48,6 +48,8 @@ def load_env():
 # Global environment variables
 ENV = load_env()
 
+DEFAULT_LOG_SOURCE = (ENV.get('DASHBOARD_LOG_SOURCE', 'loop') or 'loop').strip().lower()
+
 class ResourceMonitor:
     """Monitor system resources."""
     
@@ -739,10 +741,10 @@ class Dashboard:
         layout["right"]["data_gen"].update(self.create_data_gen_panel())
         layout["right"]["progress"].update(self.create_progress_panel())
         
-        # Cycle through different log sources
-        log_sources = ['loop', 'api', 'mlflow', 'tb', 'dashboard']
-        current_log_source = log_sources[int(time.time()) % len(log_sources)]
-        layout["footer"].update(self.create_logs_panel(current_log_source))
+        # Pin to a single log source to avoid jumping around
+        log_sources = {'loop', 'api', 'mlflow', 'tb', 'dashboard'}
+        log_source = DEFAULT_LOG_SOURCE if DEFAULT_LOG_SOURCE in log_sources else 'loop'
+        layout["footer"].update(self.create_logs_panel(log_source))
         
         return layout
     
