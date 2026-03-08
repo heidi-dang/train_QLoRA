@@ -122,13 +122,28 @@ class TrainingMonitor:
         
     def get_training_status(self) -> Dict[str, Any]:
         """Get current training status."""
+        # Always refresh from logs first so we can display live numbers even if telemetry is stale.
+        self._update_from_logs()
+
+        # Determine if training is active from processes (authoritative for the terminal dashboard).
+        is_active = bool(self._is_training_active())
+
         # Check telemetry first
         telemetry_status = self._load_from_telemetry()
         if telemetry_status:
-            # Telemetry currently doesn't carry loss/LR; enrich from logs so the UI is live.
-            self._update_from_logs()
+            # Telemetry may be stale; enrich/override from logs and process detection.
+            telemetry_status['is_training'] = bool(telemetry_status.get('is_training')) or is_active
             telemetry_status['training_loss'] = self.training_loss[-1] if self.training_loss else 0
             telemetry_status['learning_rate'] = self.learning_rate
+            if self.total_steps > 0:
+                telemetry_status['total_steps'] = self.total_steps
+            if self.training_step > 0:
+                telemetry_status['training_step'] = self.training_step
+            telemetry_status['progress_percent'] = (
+                (telemetry_status['training_step'] / telemetry_status['total_steps']) * 100
+                if telemetry_status.get('total_steps', 0) > 0 else 0
+            )
+            telemetry_status['training_speed'] = self.training_speed
             return telemetry_status
             
         # Fallback to log parsing
@@ -150,9 +165,9 @@ class TrainingMonitor:
         }
         
         # Check if training is active
-        if self._is_training_active():
+        if is_active:
             status['is_training'] = True
-            self._update_from_logs()
+            # logs already updated above
             
             # Calculate progress
             if status['total_steps'] > 0:
@@ -221,7 +236,7 @@ class TrainingMonitor:
             # Also check for train_q_lora.py process
             result = subprocess.run(['pgrep', '-f', 'train_q_lora.py'], 
                                 capture_output=True, text=True)
-            return result.returncode == 0 and result.stdout.strip()
+            return result.returncode == 0 and bool(result.stdout.strip())
         except Exception:
             return False
     
@@ -236,6 +251,22 @@ class TrainingMonitor:
                 lines = f.readlines()[-100:]  # Last 100 lines
             
             for line in lines:
+                s = line.strip()
+
+                # Parse tqdm-style training progress lines, e.g.
+                #  10%|█         | 55/500 [04:21<35:18,  4.76s/it]
+                if '%|' in s and '/' in s and 's/it' in s:
+                    m = re.search(r'\|\s*(\d+)\/(\d+)\s*\[', s)
+                    if m:
+                        self.training_step = int(m.group(1))
+                        self.total_steps = int(m.group(2))
+
+                    it = re.search(r'([0-9]+\.?[0-9]*)s\/it', s)
+                    if it:
+                        sec_per_it = float(it.group(1))
+                        if sec_per_it > 0:
+                            self.training_speed = 1.0 / sec_per_it
+
                 # Parse training progress
                 if 'Round' in line and '/' in line:
                     round_match = re.search(r'Round (\d+)/(\d+)', line)
@@ -271,6 +302,30 @@ class TrainingMonitor:
                     lr_match = re.search(r"'learning_rate':\s*'([0-9.e-]+)'", line)
                     if lr_match:
                         self.learning_rate = float(lr_match.group(1))
+
+            # If total steps is still unknown, fall back to env TRAIN_STEPS
+            if self.total_steps <= 0 and os.path.exists(ENV_FILE):
+                try:
+                    with open(ENV_FILE, 'r') as f:
+                        env_txt = f.read()
+                    ts = re.search(r'^\s*TRAIN_STEPS\s*=\s*([0-9]+)\s*$', env_txt, flags=re.MULTILINE)
+                    if ts:
+                        self.total_steps = int(ts.group(1))
+                except Exception:
+                    pass
+
+            # If rounds aren't logged, infer current round from latest adapter checkpoint
+            if self.total_rounds <= 0:
+                try:
+                    cps = list(Path(CHECKPOINTS_DIR).glob('adapter_round_*'))
+                    if cps:
+                        latest = max(cps, key=os.path.getctime)
+                        rm = re.search(r'adapter_round_(\d+)$', str(latest))
+                        if rm:
+                            self.current_round = int(rm.group(1))
+                            self.total_rounds = max(self.total_rounds, self.current_round)
+                except Exception:
+                    pass
         
         except Exception:
             pass
@@ -336,8 +391,11 @@ class LoRAMonitor:
                     metadata = json.load(f)
                     self.lora_config = metadata
             
-            # Calculate adapter size
-            adapter_files = list(checkpoint_path.glob('*.safetensors')) + list(checkpoint_path.glob('*.bin'))
+            # Calculate adapter size (recursive, some trainers nest files)
+            adapter_files = (
+                list(checkpoint_path.rglob('*.safetensors'))
+                + list(checkpoint_path.rglob('*.bin'))
+            )
             self.adapter_size = sum(f.stat().st_size for f in adapter_files) / (1024 * 1024)  # MB
             
             # Try to get parameter counts from training logs
@@ -346,13 +404,13 @@ class LoRAMonitor:
                 with open(log_file, 'r') as f:
                     content = f.read()
                     # Look for parameter count in logs
-                    param_match = re.search(r'trainable params[:\s]+([\d,]+)', content)
+                    param_match = re.search(r'(trainable params|trainable_params)[:\s]+([\d,]+)', content, flags=re.IGNORECASE)
                     if param_match:
-                        self.trainable_params = int(param_match.group(1).replace(',', ''))
+                        self.trainable_params = int(param_match.group(2).replace(',', ''))
                     
-                    total_match = re.search(r'total params[:\s]+([\d,]+)', content)
+                    total_match = re.search(r'(total params|all params|total_params)[:\s]+([\d,]+)', content, flags=re.IGNORECASE)
                     if total_match:
-                        self.total_params = int(total_match.group(1).replace(',', ''))
+                        self.total_params = int(total_match.group(2).replace(',', ''))
         
         except Exception:
             pass
