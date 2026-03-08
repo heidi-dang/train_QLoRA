@@ -36,13 +36,13 @@ require_venv() {
 }
 
 prompt_topic() {
-  echo "Select what data you want to generate:"
-  echo "  1) devops"
-  echo "  2) github_workflows"
-  echo "  3) penetration_security"
-  echo "  4) hacking"
-  echo "  5) whitehat_blackhat"
-  echo "  6) custom"
+  echo "Select what data you want to generate:" >&2
+  echo "  1) devops" >&2
+  echo "  2) github_workflows" >&2
+  echo "  3) penetration_security" >&2
+  echo "  4) hacking" >&2
+  echo "  5) whitehat_blackhat" >&2
+  echo "  6) custom" >&2
   read -r -p "Enter choice [1-6]: " choice
 
   case "${choice:-}" in
@@ -86,6 +86,15 @@ prompt_run_name() {
 
 start() {
   require_venv
+
+  # Load .env so this script always uses the same teacher/provider/model config
+  # as the main pipeline, without relying on run.sh.
+  if [ -f "$ROOT/.env" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$ROOT/.env"
+    set +a
+  fi
 
   if [ -f "$PIDS_DIR/parallel_data_gen.pid" ] && kill -0 "$(cat "$PIDS_DIR/parallel_data_gen.pid")" 2>/dev/null; then
     echo "parallel_data_gen already running (pid=$(cat "$PIDS_DIR/parallel_data_gen.pid"))"
