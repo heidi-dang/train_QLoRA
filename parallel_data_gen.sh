@@ -122,6 +122,11 @@ start() {
   export PARALLEL_DATA_GEN_FILELIST_OUT="$filelist_out"
   export PARALLEL_DATA_GEN_QUERY="$query"
   export PARALLEL_DATA_GEN_LANGS="$languages_csv"
+  # Ensure parallel gen uses same teacher provider/model as main pipeline
+  export TEACHER_PROVIDER="${TEACHER_PROVIDER:-}"
+  export TEACHER_MODEL="${TEACHER_MODEL:-}"
+  export TEACHER_API_KEY="${TEACHER_API_KEY:-}"
+  export TEACHER_COPILOT_MODEL="${TEACHER_COPILOT_MODEL:-}"
 
   nohup "$VENV_PY" -u - <<'PY' >"$log_file" 2>&1 &
 import os
