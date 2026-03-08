@@ -639,6 +639,109 @@ class DataGenerationMonitor:
         """Calculate samples per minute generation rate."""
         return 0.0
 
+
+class ParallelDataGenerationMonitor:
+    """Monitor parallel data generation (parallel_data_gen.sh) from its log files."""
+
+    def __init__(self):
+        self.log_path = None
+        self.generation_stage = 'idle'
+        self.total_files = 0
+        self.processed_files = 0
+        self.samples_generated = 0
+        self.last_update_ts = 0.0
+
+    def _latest_log(self) -> str:
+        try:
+            pattern = os.path.join(LOGS_DIR, 'parallel_data_gen_*.log')
+            matches = list(Path(LOGS_DIR).glob('parallel_data_gen_*.log'))
+            if not matches:
+                return None
+            latest = max(matches, key=lambda p: p.stat().st_mtime)
+            return str(latest)
+        except Exception:
+            return None
+
+    def get_generation_status(self) -> Dict[str, Any]:
+        path = self._latest_log()
+        self.log_path = path
+        if not path or not os.path.exists(path):
+            return {
+                'log_path': None,
+                'generation_stage': 'idle',
+                'total_files': 0,
+                'processed_files': 0,
+                'progress_percent': 0.0,
+                'samples_generated': 0,
+                'last_update_age_s': None,
+            }
+
+        try:
+            st = os.stat(path)
+            self.last_update_ts = float(st.st_mtime)
+        except Exception:
+            pass
+
+        self._update_from_log(path)
+
+        progress = (self.processed_files / self.total_files * 100.0) if self.total_files > 0 else 0.0
+        age_s = (time.time() - self.last_update_ts) if self.last_update_ts else None
+
+        return {
+            'log_path': path,
+            'generation_stage': self.generation_stage,
+            'total_files': self.total_files,
+            'processed_files': self.processed_files,
+            'progress_percent': progress,
+            'samples_generated': self.samples_generated,
+            'last_update_age_s': age_s,
+        }
+
+    def _update_from_log(self, path: str):
+        try:
+            with open(path, 'r', errors='replace') as f:
+                lines = f.readlines()[-300:]
+
+            for line in lines:
+                s = line.strip()
+
+                # Detect stages
+                if 'Searching with query:' in s:
+                    self.generation_stage = 'search'
+                elif 'Cloning ' in s or 'Updating ' in s:
+                    self.generation_stage = 'scrape'
+                elif 'Wrote filelist to' in s:
+                    self.generation_stage = 'scrape'
+                elif s.startswith('Processing ') and ' files with ' in s:
+                    # Processing 500 files with 2 workers...
+                    m = re.search(r'^Processing\s+(\d+)\s+files\s+with\s+(\d+)\s+workers', s)
+                    if m:
+                        self.total_files = int(m.group(1))
+                    self.generation_stage = 'generate'
+                elif 'DONE. Output written to:' in s or 'Generated ' in s and ' samples from ' in s:
+                    self.generation_stage = 'done'
+                    m = re.search(r'Generated\s+(\d+)\s+samples\s+from\s+(\d+)\s+files', s)
+                    if m:
+                        self.samples_generated = int(m.group(1))
+                        self.total_files = int(m.group(2))
+                        self.processed_files = int(m.group(2))
+
+                # tqdm progress: "Generating:  10%|...| 50/500 [..]"
+                if 'Generating' in s and '%|' in s and '/' in s:
+                    m = re.search(r'\|\s*(\d+)\/(\d+)\s*\[', s)
+                    if m:
+                        self.processed_files = int(m.group(1))
+                        self.total_files = int(m.group(2))
+                        self.generation_stage = 'generate'
+
+                # tqdm postfix: "samples=123 file=..."
+                sm = re.search(r'\bsamples=([0-9]+)\b', s)
+                if sm:
+                    self.samples_generated = max(self.samples_generated, int(sm.group(1)))
+
+        except Exception:
+            return
+
 class LogMonitor:
     """Monitor and tail log files."""
     
@@ -698,6 +801,7 @@ class Dashboard:
         self.training_monitor = TrainingMonitor()
         self.lora_monitor = LoRAMonitor()
         self.data_monitor = DataGenerationMonitor()
+        self.parallel_data_monitor = ParallelDataGenerationMonitor()
         self.log_monitor = LogMonitor()
         self.running = True
         self.refresh_interval = 1.0
@@ -729,8 +833,14 @@ class Dashboard:
 
         layout["right"].split_column(
             Layout(name="lora", size=8),
-            Layout(name="data_gen", size=8),
+            Layout(name="data_gen_row", size=8),
             Layout(name="progress", size=8)
+        )
+
+        # Split data generation area into normal vs parallel
+        layout["right"]["data_gen_row"].split_row(
+            Layout(name="data_gen"),
+            Layout(name="parallel_data_gen"),
         )
 
         # Full-width realtime logs split into 2 panels
@@ -862,6 +972,36 @@ class Dashboard:
         table.add_row("Cost", f"${data.get('total_cost', 0):.4f}")
         
         return Panel(table, title="📊 Data Gen & Cost", border_style="blue")
+
+    def create_parallel_data_gen_panel(self) -> Panel:
+        """Create parallel data generation panel (parallel_data_gen.sh)."""
+        data = self.parallel_data_monitor.get_generation_status()
+
+        table = Table(show_header=False, box=None)
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", style="white")
+
+        stage = (data.get('generation_stage') or 'idle').title()
+        table.add_row("Stage", stage)
+        table.add_row("Files", f"{int(data.get('processed_files', 0) or 0)}/{int(data.get('total_files', 0) or 0)}")
+        table.add_row("Progress", f"{float(data.get('progress_percent', 0) or 0):.1f}%")
+        table.add_row("Samples", f"{int(data.get('samples_generated', 0) or 0):,}")
+
+        age_s = data.get('last_update_age_s')
+        if isinstance(age_s, (int, float)):
+            if age_s < 60:
+                age_txt = f"{age_s:.0f}s"
+            elif age_s < 3600:
+                age_txt = f"{age_s/60:.0f}m"
+            else:
+                age_txt = f"{age_s/3600:.1f}h"
+            table.add_row("Last Update", age_txt)
+
+        lp = data.get('log_path')
+        if lp:
+            table.add_row("Log", Path(lp).name)
+
+        return Panel(table, title="⚡ Parallel Gen", border_style="bright_blue")
     
     def create_progress_panel(self) -> Panel:
         """Create progress panel."""
@@ -960,32 +1100,12 @@ class Dashboard:
                 'training': self.training_monitor.get_training_status(),
                 'lora': self.lora_monitor.get_lora_info(),
                 'data_gen': self.data_monitor.get_generation_status(),
+                'parallel_data_gen': self.parallel_data_monitor.get_generation_status(),
                 'logs': self.log_monitor.get_recent_logs('loop')[-30:]
             }
-            self.last_update = current_time
-        
-        return self.update_cache
-    
-    def render(self):
-        """Render dashboard."""
-        layout = self.create_layout()
-        
-        # Get cached data
-        data = self.update()
-        
-        # Populate layout with cached data
-        layout["header"].update(self.create_header())
-        layout["left"]["resources"].update(self.create_resources_panel())
-        layout["left"]["training"].update(self.create_training_panel())
-        layout["right"]["lora"].update(self.create_lora_panel())
-        layout["right"]["data_gen"].update(self.create_data_gen_panel())
-        layout["right"]["progress"].update(self.create_progress_panel())
 
-        # Two pinned log sources (no auto-cycling)
-        layout["footer"]["training_logs"].update(self.create_logs_panel('loop', '🎯 Training % / Progress', filter_mode='training'))
-        layout["footer"]["other_logs"].update(self.create_logs_panel('api', '📋 Other Logs (API)'))
-        
-        return layout
+        # Keep layout up to date (render() is responsible for applying these)
+        return self.update_cache
     
     def run(self):
         """Run the dashboard with hot-reload support."""
