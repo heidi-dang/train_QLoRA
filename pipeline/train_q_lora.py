@@ -214,34 +214,56 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
         "train_dataset": dataset,
         "args": training_args,
         "data_collator": data_collator,
-        "max_seq_length": 2048,
-        "dataset_text_field": "text",
-        "packing": False,
     }
 
+    # Only add parameters that are actually supported
+    supported_params = set(inspect.signature(SFTTrainer.__init__).parameters.keys())
+    
     # Handle tokenizer/processing_class parameter compatibility
-    if "processing_class" in params:
+    if "processing_class" in supported_params:
         common_kwargs["processing_class"] = tokenizer
         logging.info("Using processing_class parameter for tokenizer")
-    elif "tokenizer" in params:
+    elif "tokenizer" in supported_params:
         common_kwargs["tokenizer"] = tokenizer
         logging.info("Using tokenizer parameter")
     else:
         logging.warning("Neither tokenizer nor processing_class found in SFTTrainer parameters")
 
+    # Add optional parameters only if supported
+    optional_params = {
+        "max_seq_length": 2048,
+        "dataset_text_field": "text",
+        "packing": False,
+    }
+    
+    for param, value in optional_params.items():
+        if param in supported_params:
+            common_kwargs[param] = value
+            logging.info(f"Using {param} parameter")
+        else:
+            logging.info(f"Skipping unsupported parameter: {param}")
+
     try:
         trainer = SFTTrainer(**common_kwargs)
         logging.info("SFTTrainer created successfully")
     except TypeError as e:
-        logging.error(f"Failed to create SFTTrainer with tokenizer: {e}")
-        # Last resort: try without tokenizer/processing_class
-        common_kwargs.pop("processing_class", None)
-        common_kwargs.pop("tokenizer", None)
+        logging.error(f"Failed to create SFTTrainer: {e}")
+        # Try with minimal parameters
+        minimal_kwargs = {
+            "model": model,
+            "train_dataset": dataset,
+            "args": training_args,
+        }
+        if "processing_class" in supported_params:
+            minimal_kwargs["processing_class"] = tokenizer
+        elif "tokenizer" in supported_params:
+            minimal_kwargs["tokenizer"] = tokenizer
+        
         try:
-            trainer = SFTTrainer(**common_kwargs)
-            logging.info("SFTTrainer created without tokenizer parameter")
+            trainer = SFTTrainer(**minimal_kwargs)
+            logging.info("SFTTrainer created with minimal parameters")
         except TypeError as e2:
-            logging.error(f"Failed to create SFTTrainer even without tokenizer: {e2}")
+            logging.error(f"Failed to create SFTTrainer with minimal parameters: {e2}")
             raise e2
     
     logging.info("Starting training...")
