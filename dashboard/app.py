@@ -803,6 +803,7 @@ class Dashboard:
         self.data_monitor = DataGenerationMonitor()
         self.parallel_data_monitor = ParallelDataGenerationMonitor()
         self.log_monitor = LogMonitor()
+        self.layout = self.create_layout()
         self.running = True
         self.refresh_interval = 1.0
         self.last_update = 0
@@ -1058,6 +1059,28 @@ class Dashboard:
         
         log_text = "\n".join(formatted_logs)
         return Panel(log_text, title=title, border_style="white")
+
+    def render(self) -> Layout:
+        """Render the dashboard."""
+        layout = self.layout
+
+        layout["header"].update(self.create_header())
+        layout["left"]["resources"].update(self.create_resources_panel())
+        layout["left"]["training"].update(self.create_training_panel())
+        layout["right"]["lora"].update(self.create_lora_panel())
+        layout["right"]["data_gen_row"]["data_gen"].update(self.create_data_gen_panel())
+        layout["right"]["data_gen_row"]["parallel_data_gen"].update(self.create_parallel_data_gen_panel())
+        layout["right"]["progress"].update(self.create_progress_panel())
+
+        # Two pinned log sources (no auto-cycling)
+        layout["footer"]["training_logs"].update(
+            self.create_logs_panel('loop', '🎯 Training % / Progress', filter_mode='training')
+        )
+        layout["footer"]["other_logs"].update(
+            self.create_logs_panel('api', '📋 Other Logs (API)')
+        )
+
+        return layout
     
     def should_reload(self) -> bool:
         """Check if dashboard should be reloaded due to file changes."""
