@@ -26,22 +26,34 @@ DATASETS_CLEAN = os.path.join(AI_LAB, 'datasets', 'clean')
 TRAIN_FILE = os.path.join(DATASETS_CLEAN, 'train.json')
 MLFLOW_EXPERIMENT = 'continuous_training'
 
+
+def _preferred_python() -> str:
+    """Prefer the repo venv Python for all subprocess stages.
+
+    This avoids issues where the parent process is started with system python
+    but ML deps (torch/transformers/trl/peft) are only installed in venv.
+    """
+    venv_py = os.path.join(ROOT, 'venv', 'bin', 'python')
+    if os.path.exists(venv_py):
+        return venv_py
+    return sys.executable
+
 logging.basicConfig(level=logging.INFO)
 
 
 def stage_scrape():
     logging.info('Stage: scrape')
-    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'scrape_repos.py')])
+    subprocess.call([_preferred_python(), os.path.join(ROOT, 'pipeline', 'scrape_repos.py')])
 
 
 def stage_generate():
     logging.info('Stage: generate samples')
-    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'generate_samples.py')])
+    subprocess.call([_preferred_python(), os.path.join(ROOT, 'pipeline', 'generate_samples.py')])
 
 
 def stage_clean():
     logging.info('Stage: clean dataset')
-    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'clean_dataset.py')])
+    subprocess.call([_preferred_python(), os.path.join(ROOT, 'pipeline', 'clean_dataset.py')])
 
 
 def _safe_int_env(name: str, default: int) -> int:
@@ -83,7 +95,12 @@ def stage_train(round_n: int):
     # call training scaffold (train_q_lora) which will use real training if deps present
     train_script = os.path.join(ROOT, 'pipeline', 'train_q_lora.py')
     try:
-        subprocess.check_call([sys.executable, train_script, os.path.join(AI_LAB, 'datasets', 'clean', 'train.json'), ckpt_dir])
+        subprocess.check_call([
+            _preferred_python(),
+            train_script,
+            os.path.join(AI_LAB, 'datasets', 'clean', 'train.json'),
+            ckpt_dir,
+        ])
     except subprocess.CalledProcessError:
         logging.exception('Training script failed; creating metadata only')
     meta = {'round': round_n, 'base_model': 'mistralai/Mistral-7B-Instruct-v0.2'}
@@ -94,7 +111,7 @@ def stage_train(round_n: int):
 
 def stage_evaluate(round_n: int):
     logging.info('Stage: evaluate')
-    subprocess.call([sys.executable, os.path.join(ROOT, 'pipeline', 'evaluate_model.py'), str(round_n)])
+    subprocess.call([_preferred_python(), os.path.join(ROOT, 'pipeline', 'evaluate_model.py'), str(round_n)])
 
 
 def main_loop():
