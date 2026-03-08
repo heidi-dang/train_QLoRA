@@ -177,7 +177,9 @@ def generate_for_file(path: str, out_dir: str, teacher_client=None):
             resp = ''
         
         sample = {
-            'instruction': template,
+            'instruction': tag,
+            'instruction_detail': template,
+            'prompt': prompt,
             'context': text[:8192],
             'response': resp,
             'language': 'python' if path.endswith('.py') else 'cpp' if path.endswith(('.cpp', '.cc', '.hpp', '.h', '.c')) else 'mixed',

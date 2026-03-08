@@ -31,7 +31,7 @@ pip install -r requirements.txt
 echo "✅ Environment setup complete!"
 
 # Load configuration if exists
-if [ -f "$CONFIG" ]; then
+if [ -f "$ROOT/.env" ]; then
   export $(cat "$ROOT/.env" | xargs)
 fi
 
@@ -91,9 +91,11 @@ case $CMD in
     $VENV_PYTHON github_search.py
     ;;
   up)
-    # Always run setup to ensure proper configuration
-#     echo "🔧 Running configuration setup..."
-#     $VENV_PYTHON setup_config.py
+    # Ensure .env exists
+    if [ ! -f "$ROOT/.env" ]; then
+      echo "No .env found. Running setup..."
+      $VENV_PYTHON setup_env.py
+    fi
     
     # Stop any existing services first
     echo "🛑 Stopping any existing services..."
@@ -152,6 +154,7 @@ case $CMD in
     # TensorBoard
     if [ "${ENABLE_TENSORBOARD:-true}" = "true" ]; then
       if ! pgrep -f "tensorboard" > /dev/null; then
+        mkdir -p "$ROOT/data/ai-lab/logs" 2>/dev/null || true
         nohup "$VENV/bin/tensorboard" --logdir "$ROOT/data/ai-lab/logs" --host 0.0.0.0 --port 6006 >> "$LOGS/tb.log" 2>&1 &
         echo $! > "$PIDS/tb.pid"
       fi
