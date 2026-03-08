@@ -547,7 +547,7 @@ class Dashboard:
         layout.split_column(
             Layout(name="header", size=3),
             Layout(name="main"),
-            Layout(name="footer", size=10)
+            Layout(name="footer", size=20)
         )
         
         layout["main"].split_row(
@@ -692,11 +692,11 @@ class Dashboard:
     
     def create_logs_panel(self, log_source: str = 'loop') -> Panel:
         """Create real-time logs panel."""
-        logs = self.log_monitor.get_recent_logs(log_source, lines=15)
+        logs = self.log_monitor.get_recent_logs(log_source, lines=30)
         
         # Format logs with colors based on content
         formatted_logs = []
-        for log in logs[-15:]:
+        for log in logs[-30:]:
             if 'ERROR' in log.upper():
                 formatted_logs.append(f"[red]{log}[/red]")
             elif 'WARNING' in log.upper():
@@ -720,7 +720,7 @@ class Dashboard:
                 'training': self.training_monitor.get_training_status(),
                 'lora': self.lora_monitor.get_lora_info(),
                 'data_gen': self.data_monitor.get_generation_status(),
-                'logs': self.log_monitor.get_recent_logs('loop')[-15:]
+                'logs': self.log_monitor.get_recent_logs('loop')[-30:]
             }
             self.last_update = current_time
         
