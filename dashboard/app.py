@@ -599,7 +599,7 @@ class LogMonitor:
         return [line.strip() for line in self._tail_lines(target_log, lines=lines)]
 
 class Dashboard:
-    """Main dashboard application."""
+    """Main dashboard application with hot-reload support."""
     
     def __init__(self):
         self.resource_monitor = ResourceMonitor()
@@ -612,6 +612,8 @@ class Dashboard:
         self.last_update = 0
         self.update_cache = {}
         self.cache_ttl = 0.5
+        self.last_file_check = 0
+        self.file_check_interval = 2.0  # Check for file changes every 2 seconds
         
     def create_layout(self) -> Layout:
         """Create dashboard layout."""
@@ -745,7 +747,11 @@ class Dashboard:
         table.add_row("Progress", f"{data['progress_percent']:.1f}%")
         
         # Token usage and cost information
-        table.add_row("Provider", data.get('provider', 'N/A'))
+        provider_display = data.get('provider', 'N/A')
+        if provider_display == 'N/A' or provider_display == 'unknown':
+            # Fallback to env var
+            provider_display = self._format_provider(ENV.get('TEACHER_PROVIDER', 'copilot'))
+        table.add_row("Provider", provider_display)
         table.add_row("Model", data.get('model', 'N/A'))
         table.add_row("Requests", f"{data.get('request_count', 0):,}")
         table.add_row("Prompt Tokens", f"{data.get('prompt_tokens', 0):,}")
@@ -817,6 +823,36 @@ class Dashboard:
         log_text = "\n".join(formatted_logs)
         return Panel(log_text, title=title, border_style="white")
     
+    def should_reload(self) -> bool:
+        """Check if dashboard should be reloaded due to file changes."""
+        current_time = time.time()
+        if current_time - self.last_file_check > self.file_check_interval:
+            self.last_file_check = current_time
+            
+            # Check key files for modifications
+            key_files = [
+                os.path.join(ROOT, 'dashboard', 'app.py'),
+                os.path.join(ROOT, '.env'),
+                os.path.join(ROOT, 'run.sh')
+            ]
+            
+            for file_path in key_files:
+                if os.path.exists(file_path):
+                    try:
+                        file_mtime = os.path.getmtime(file_path)
+                        if not hasattr(self, '_file_mtimes'):
+                            self._file_mtimes = {}
+                        
+                        if file_path not in self._file_mtimes:
+                            self._file_mtimes[file_path] = file_mtime
+                        elif file_mtime > self._file_mtimes[file_path]:
+                            print(f"[yellow]🔄 Dashboard hot-reloading: {file_path} changed[/yellow]")
+                            self._file_mtimes[file_path] = file_mtime
+                            return True
+                    except Exception:
+                        pass
+        return False
+    
     def update(self):
         """Update all monitors with caching."""
         current_time = time.time()
@@ -856,12 +892,30 @@ class Dashboard:
         return layout
     
     def run(self):
-        """Run the dashboard."""
+        """Run the dashboard with hot-reload support."""
         console.clear()
         
         try:
             with Live(self.render(), refresh_per_second=1/self.refresh_interval, screen=True) as live:
                 while self.running:
+                    # Check for hot-reload
+                    if self.should_reload():
+                        print("[green]🔄 Hot-reloading dashboard...[/green]")
+                        # Re-import and recreate dashboard
+                        import import importlib
+                        import sys
+                        
+                        # Clear module cache
+                        modules_to_reload = ['dashboard.app']
+                        for module_name in modules_to_reload:
+                            if module_name in sys.modules:
+                                importlib.reload(sys.modules[module_name])
+                        
+                        # Recreate dashboard
+                        from dashboard.app import Dashboard as NewDashboard
+                        self.__class__ = NewDashboard
+                        self.__init__()
+                    
                     live.update(self.render())
                     time.sleep(self.refresh_interval)
         except KeyboardInterrupt:
