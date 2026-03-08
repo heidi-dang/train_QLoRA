@@ -192,7 +192,8 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
         optim="paged_adamw_32bit",
         lr_scheduler_type="cosine",
         warmup_ratio=0.03,
-        report_to="mlflow" if config.get('enable_mlflow') else "none",
+        report_to=["tensorboard", "mlflow"] if config.get('enable_mlflow') else "tensorboard",
+        logging_dir=os.path.join(os.path.dirname(output_dir), 'logs'),
         remove_unused_columns=False,
         resume_from_checkpoint=True,
     )
