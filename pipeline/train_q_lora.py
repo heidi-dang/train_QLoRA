@@ -176,6 +176,19 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
     if not ML_DEPENDENCIES:
         raise ImportError("ML dependencies not available")
     
+    # Try to resume from checkpoint if it exists
+    from transformers import AutoModelForCausalLM
+    import glob
+    checkpoint_dirs = sorted(glob.glob(os.path.join(output_dir, "checkpoint-*")))
+    if checkpoint_dirs:
+        latest_ckpt = checkpoint_dirs[-1]
+        logging.info(f"Resuming from checkpoint: {latest_ckpt}")
+        model = AutoModelForCausalLM.from_pretrained(latest_ckpt)
+        setup_lora(model, config)
+    else:
+        logging.info("No checkpoint found, starting from scratch")
+        setup_lora(model, config)
+    
     # Training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
