@@ -33,6 +33,9 @@ pip install -r requirements.txt
 
 echo "✅ Environment setup complete!"
 
+# Ensure logs flush promptly for real-time dashboard tailing
+export PYTHONUNBUFFERED=1
+
 # Load configuration if exists
 if [ -f "$ROOT/.env" ]; then
   set -a
@@ -135,7 +138,7 @@ case $CMD in
     # Start Dashboard if enabled
     if [ "${ENABLE_DASHBOARD:-true}" = "true" ]; then
       if ! pgrep -f "dashboard.app" > /dev/null; then
-        nohup $VENV_DASHBOARD -c "from dashboard.app import main; main()" >> "$LOGS/dashboard.log" 2>&1 &
+        nohup $VENV_DASHBOARD -u -c "from dashboard.app import main; main()" >> "$LOGS/dashboard.log" 2>&1 &
         echo $! > "$PIDS/dashboard.pid"
       fi
     fi
@@ -165,7 +168,7 @@ case $CMD in
     
     # Loop
     if ! pgrep -f "train_loop.py" > /dev/null; then
-      nohup $VENV_PYTHON -m pipeline.train_loop >> "$LOGS/loop.log" 2>&1 &
+      nohup $VENV_PYTHON -u -m pipeline.train_loop >> "$LOGS/loop.log" 2>&1 &
       echo $! > "$PIDS/loop.pid"
     fi
     

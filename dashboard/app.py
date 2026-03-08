@@ -478,6 +478,34 @@ class LogMonitor:
     def __init__(self):
         self.log_lines = []
         self.max_lines = 20
+
+    def _tail_lines(self, path: str, lines: int = 20, max_bytes: int = 65536) -> List[str]:
+        """Read last N lines from a potentially large file efficiently."""
+        try:
+            with open(path, 'rb') as f:
+                f.seek(0, os.SEEK_END)
+                end = f.tell()
+                read_size = min(max_bytes, end)
+                f.seek(end - read_size)
+                data = f.read(read_size)
+        except Exception:
+            return [f"Error reading log file: {path}"]
+
+        try:
+            text = data.decode('utf-8', errors='replace')
+        except Exception:
+            text = str(data)
+
+        # If we didn't read from the beginning, drop a partial first line.
+        if read_size < end:
+            nl = text.find('\n')
+            if nl != -1:
+                text = text[nl + 1:]
+
+        out = [line.rstrip('\n') for line in text.splitlines() if line is not None]
+        if not out:
+            return ["(log is empty)"]
+        return out[-lines:]
         
     def get_recent_logs(self, process_name: str = None, lines: int = 20) -> List[str]:
         """Get recent log lines."""
@@ -493,12 +521,7 @@ class LogMonitor:
         if not os.path.exists(target_log):
             return [f"Log file not found: {target_log}"]
         
-        try:
-            with open(target_log, 'r') as f:
-                all_lines = f.readlines()
-                return [line.strip() for line in all_lines[-lines:]]
-        except Exception:
-            return [f"Error reading log file: {target_log}"]
+        return [line.strip() for line in self._tail_lines(target_log, lines=lines)]
 
 class Dashboard:
     """Main dashboard application."""
