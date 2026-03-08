@@ -9,6 +9,7 @@ import logging
 import torch
 from pathlib import Path
 from typing import Optional, Dict, Any
+import inspect
 
 # ML dependencies
 try:
@@ -81,23 +82,38 @@ def load_model_and_tokenizer(model_name: str, hf_token: str = None):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
-    logging.info(f"Loading model {model_name} with 4-bit quantization...")
-    
-    # QLoRA configuration
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_use_double_quant=True
-    )
-    
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        quantization_config=bnb_config,
-        token=hf_token if hf_token else None,
-        device_map="auto",
-        trust_remote_code=True
-    )
+    logging.info(f"Loading model {model_name}...")
+
+    model = None
+    last_err: Optional[Exception] = None
+    try:
+        logging.info("Attempting 4-bit quantized load...")
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=True
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            quantization_config=bnb_config,
+            token=hf_token if hf_token else None,
+            device_map="auto",
+            trust_remote_code=True
+        )
+    except TypeError as e:
+        last_err = e
+    except Exception as e:
+        last_err = e
+
+    if model is None:
+        logging.warning(f"4-bit load failed, falling back to non-quantized model load: {last_err}")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            token=hf_token if hf_token else None,
+            device_map="auto",
+            trust_remote_code=True
+        )
     
     return model, tokenizer
 
@@ -177,17 +193,34 @@ def train_model(model, tokenizer, dataset, config: Dict[str, Any], output_dir: s
         pad_to_multiple_of=8
     )
     
-    # Trainer
-    trainer = SFTTrainer(
-        model=model,
-        train_dataset=dataset,
-        args=training_args,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        max_seq_length=2048,
-        dataset_text_field="text",
-        packing=False,
-    )
+    trainer = None
+    try:
+        params = set(inspect.signature(SFTTrainer.__init__).parameters.keys())
+    except Exception:
+        params = set()
+
+    common_kwargs = {
+        "model": model,
+        "train_dataset": dataset,
+        "args": training_args,
+        "data_collator": data_collator,
+        "max_seq_length": 2048,
+        "dataset_text_field": "text",
+        "packing": False,
+    }
+
+    if "tokenizer" in params:
+        common_kwargs["tokenizer"] = tokenizer
+    elif "processing_class" in params:
+        common_kwargs["processing_class"] = tokenizer
+
+    try:
+        trainer = SFTTrainer(**common_kwargs)
+    except TypeError:
+        # Last resort for older/newer TRL variants
+        common_kwargs.pop("tokenizer", None)
+        common_kwargs.pop("processing_class", None)
+        trainer = SFTTrainer(**common_kwargs)
     
     logging.info("Starting training...")
     trainer.train()
